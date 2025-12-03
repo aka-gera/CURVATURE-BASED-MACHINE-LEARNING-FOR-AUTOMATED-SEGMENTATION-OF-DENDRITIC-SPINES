@@ -28,7 +28,8 @@ fi
 
 # Activate environment and install requirements
 echo "Activating environment and installing requirements..."
-source dsa_venv/bin/activate
+python3.11 -m venv dsa_venv
+source ./dsa_venv/bin/activate
 
 if [ -f requirements.txt ]; then
   pip install --upgrade pip
