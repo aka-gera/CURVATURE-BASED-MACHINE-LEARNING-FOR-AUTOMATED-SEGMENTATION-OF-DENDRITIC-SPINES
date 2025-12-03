@@ -13,7 +13,7 @@ chmod +x setup.sh
 cd dend_analysis
 python3.11 -m venv ../dsa_venv
 source ../dsa_venv/bin/activate
-python app/app.py
+python -m  gunicorn -w 4 -b 0.0.0.0:8050 wsgi:server -c gunicorn.conf.py
 
 ```
 This will:
@@ -83,7 +83,7 @@ Once segmentation has terminated, you can check the results by following these s
 2. Reopen the application by running:  
 
 ```bash
-python app/app.py
+python -m  gunicorn -w 4 -b 0.0.0.0:8050 wsgi:server -c gunicorn.conf.py
 ```
 
 ## Navigating the Interface
