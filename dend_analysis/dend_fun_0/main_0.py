@@ -21,7 +21,22 @@ from dend_fun_0.get_path import get_name,get_configs,get_path_train,get_data_mod
 
 file_path_parent=os.path.dirname(file_path_org)
 file_path_parent=os.path.join(file_path_parent,'meshes')
- 
+
+import subprocess
+def restart_apps(process="gunicorn"):
+    try: 
+        subprocess.run(["pkill", "-f", process], check=False) 
+        subprocess.Popen([
+            "python3", "-m", "gunicorn.app.wsgiapp",
+            "-w", "4",
+            "-b", "0.0.0.0:8050",
+            "wsgi:server",
+            "-c", "gunicorn.conf.py"
+        ])
+        return "Restart triggered!"
+    except Exception as e:
+        return f"Error restarting: {e}"
+
 
 def algorithm_param(nam='meshes',n_step = 200,weight=3,size_threshold=100, ):
  
@@ -482,11 +497,19 @@ dbc.Row([
             dbc.CardBody([
                 dbc.Button("Run Analysis", id="run-button", n_clicks=0, color="primary")
             ]),
-            style={"margin": "10px", "padding": "10px"}
+            style={"margin": "7px", "padding": "7px"}
         ),
         width="auto"
     ),
-
+    dbc.Col(
+        dbc.Card(
+            dbc.CardBody([
+                dbc.Button("Restart", id="restart-button", n_clicks=0, color="primary")
+            ]),
+            style={"margin": "5px", "padding": "5px"}
+        ),
+        width="auto"
+    ),
     # Middle card: Upload File
     dbc.Col(
         dbc.Card(
