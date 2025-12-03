@@ -11,6 +11,22 @@ sys.path.append(os.path.abspath(file_path_org))
 from dend_fun_0.obj_get import parse_obj_upload
 from  dend_fun_0.main_0 import app_run_param,algorithm,algorithm_param,get_data, get_data_all
 
+import subprocess
+def restart_apps():
+    try: 
+        subprocess.run(["pkill", "-f", "gunicorn"], check=False) 
+        subprocess.Popen([
+            "python", "-m", "gunicorn.app.wsgiapp",
+            "-w", "4",
+            "-b", "0.0.0.0:8050",
+            "wsgi:server",
+            "-c", "gunicorn.conf.py"
+        ])
+        return "Restart triggered!"
+    except Exception as e:
+        return f"Error restarting: {e}"
+    
+
 name='pinn'
 page_dir=f"/dsa-{name}"
 
@@ -28,7 +44,17 @@ param = algorithm_param()
 mapp = app_run_param(param)
 def layout():
     return mapp.app_layout
- 
+
+@callback( 
+    Input("restart-button", "n_clicks"),
+    prevent_initial_call=True
+)
+def restart_app(n_clicks):
+    if n_clicks:
+        restart_apps()
+        return "Restart requested. Server will restart shortly."
+
+
 for gval in list(set(param['param_input']['param'])):
     @callback(
         Output(f"collapse-{gval}", "is_open"),
