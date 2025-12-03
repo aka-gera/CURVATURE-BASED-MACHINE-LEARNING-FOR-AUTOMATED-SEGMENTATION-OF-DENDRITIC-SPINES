@@ -96,13 +96,7 @@ plotly==6.0.1
 pmeshlab==0.0.5
 prompt_toolkit==3.0.51
 protobuf==4.25.8
-psutil==7.0.0
-ptyprocess==0.7.0
-pure_eval==0.2.3
-pyglet==1.5.27
-Pygments==2.19.1
-pyinstaller==6.16.0
-pyinstaller-hooks-contrib==2025.9 
+psutil==7.0.0 
 PyOpenGL==3.1.0
 pyparsing==3.2.3
 PyQt5==5.15.11
@@ -137,11 +131,7 @@ tensorflow-io-gcs-filesystem==0.37.1
 tensorflow-macos==2.16.2
 termcolor==3.0.1
 threadpoolctl==3.6.0
-tifffile==2024.8.30
-tomli==2.2.1
-tornado==6.4.2
-tqdm==4.67.1
-traitlets==5.14.3
+tifffile==2024.8.30 
 trimesh==4.6.8
 typing_extensions==4.13.2
 tzdata==2025.2
@@ -151,7 +141,4 @@ vtk==9.4.2
 wcwidth==0.2.13
 Werkzeug==3.0.6
 wrapt==1.17.2
-xgboost==2.1.4
-zipp==3.21.0
-zope.event==6.0
-zope.interface==8.0.1
+xgboost==2.1.4 

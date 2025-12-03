@@ -9,11 +9,12 @@ git clone https://github.com/aka-gera/CURVATURE-BASED-MACHINE-LEARNING-FOR-AUTOM
 cd CURVATURE-BASED-MACHINE-LEARNING-FOR-AUTOMATED-SEGMENTATION-OF-DENDRITIC-SPINES
 chmod +x setup.sh
 ./setup.sh
-
+ 
 cd dend_analysis
-python3 -m venv ../dsa_venv
+python3.11 -m venv ../dsa_venv
 source ../dsa_venv/bin/activate
-/usr/bin/python3 app/app.py
+python app/app.py
+
 ```
 This will:
 - Clone the repository  
