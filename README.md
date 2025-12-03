@@ -83,7 +83,7 @@ Once segmentation has terminated, you can check the results by following these s
 2. Reopen the application by running:  
 
 ```bash
-/usr/bin/python3 app/app.py
+python app/app.py
 ```
 
 ## Navigating the Interface
