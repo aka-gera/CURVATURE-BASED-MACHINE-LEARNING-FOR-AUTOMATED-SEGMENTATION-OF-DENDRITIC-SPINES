@@ -819,14 +819,15 @@ class algorithm:
                 dend_data['dend_path_inits']=[f'{nam}_resized'  for nam in dend_data['dend_path_inits']]
                 pathd= dend_data['obj_org_path']
                 dend_data['obj_org_path']=f'{pathd}_resized' 
-                dend_data['obj_org_path_dict']['true_0']= dend_data['obj_org_path'] 
+                dend_data['obj_org_path_dict']['true_0']= dend_data['obj_org_path']  
                 get_smh=get_smooth(  
                                     dend_data=dend_data, 
                                     file_path_org=file_path_org,
                                     obj_org_path=obj_org_path_dict[true_name],
                                     true_keys=true_keys,
                                     obj_org_path_dict=obj_org_path_dict, 
-                                    **param['Smooth']['param'] )
+                                    model_sufix_dic=model_sufix_dic,
+                                    **parr )
 
                 if param['Smooth']['tf']:
                     get_smh.get_smooth_all() 
@@ -843,6 +844,7 @@ class algorithm:
                                     path_heads= path_heads,
                                     model_type=model_type,
                                     obj_org_path_dict=obj_org_path_dict ,
+                                    model_sufix_dic=model_sufix_dic,
                                     true_keys=true_keys,
                                     **param['dendrite_pred']['param']
                                     ) 
