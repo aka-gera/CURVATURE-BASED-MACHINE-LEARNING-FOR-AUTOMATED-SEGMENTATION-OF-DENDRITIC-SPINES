@@ -97,7 +97,8 @@ for gval in list(set(param['param_input']['param'])):
     Output("output-file-upload", "children"),
     Output("shared-data", "data"),   # save to store
    [Input("upload-data", "filename"), 
-     Input("restart-button", "n_clicks")],
+     Input("restart-button", "n_clicks"),
+    Input("run-button", "n_clicks"),],
      # # # Input("upload-data", "filename"), 
     [State(idx, "value") for idx in mapp.Input_id] + [
         State("upload-data", "contents"),
@@ -105,15 +106,18 @@ for gval in list(set(param['param_input']['param'])):
         State("upload-data", "last_modified"),
         State("id-destination", "value"),
     ],
-    prevent_initial_call=False
+    prevent_initial_call=True
 )
-def display_filenames(filenames,restart_clicks, *values):
+def display_filenames(filenames,restart_clicks,n_clicks, *values):
     param=mapp.rebuild_param(values)
 
     *other_values, contents, filenames, last_modified, objs_path_org = values
     export_dir = os.path.dirname(objs_path_org)
     nam = os.path.basename(objs_path_org)
  
+    if n_clicks == 0  :
+        raise dash.exceptions.PreventUpdate
+
     if restart_clicks:
         threading.Thread(target=async_restart).start()
         return html.Div("Restart requested"), {}
@@ -154,12 +158,15 @@ def display_filenames(filenames,restart_clicks, *values):
     if contents is None:
         display = html.Div([
             html.H4("No files uploaded yet. Directory has:"),
+            html.H4(f"--------{param['Smooth']}"),
+            html.H4(f"--------{[param[gval]['param']    for gval in param['param_dropdown']['param']]}"),
             html.Ul([html.Li(name) for name in [f for f in os.listdir(objs_path_org) if os.path.isdir(os.path.join(objs_path_org, f))]])
         ])
     else:
         display = html.Div([
             html.H4("Uploaded Files"),
             html.H4(f"--------{param['Smooth']}"),
+            html.H4(f"--------{[param[gval]['param']    for gval in param['param_dropdown']['param']]}"),
             html.Ul([html.Li(name) for name in filenames])
         ]) 
 
