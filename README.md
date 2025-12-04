@@ -117,9 +117,9 @@ Use the dropdown buttons to explore different features:
   - Choose skeleton view.  
   - **model_sp_iou** → visualize Jaccard index.  
   - **model_sp_loss** → visualize training loss.  
-
+  
 - **SHAP Coefficients**  
-  - **model_shap** → visualize SHAP coefficients.  
+  - **model_shap** → visualize SHAP coefficients using [Shapley values](https://en.wikipedia.org/wiki/Shapley_value).
 
 - **Morphologic Parameters**  
   - Plot morphologic parameters against each other.  
