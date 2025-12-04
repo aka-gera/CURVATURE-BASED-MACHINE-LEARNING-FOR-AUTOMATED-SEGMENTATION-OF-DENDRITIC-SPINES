@@ -142,8 +142,8 @@ def algorithm_param(nam='meshes',n_step = 200,weight=3,size_threshold=100, ):
 
     param_dropdown=['path_heads', 'dnn_modes']
     param_dropdowni=['path_head', 'dnn_mode']
-    param_input=['Smooth','Resizing','Spine–Shaft Segm', 'Morphologic Param','clean_path_dir',  ]
-    param_inputbv=[ 'intensity_all','model_shap','iou','graph_center','dash_pages', 'cylinder_heatmap' ,'annotations',  'dendrite_pred',  ]
+    param_input=['Smooth','Resizing','Spine–Shaft Segm', 'Morphologic Param','model_shap','clean_path_dir',  ]
+    param_inputbv=[ 'intensity_all','iou','graph_center','dash_pages', 'cylinder_heatmap' ,'annotations',  'dendrite_pred',  ]
     param_input_save=[ 'spines_segss_old','spines_segss_old_2', 'clean_path_dir','get_training', ]
     param_list=['param_dropdown','param_input','param_all', 'param_list','param_dropdowni','param_inputbv' ]
     param_all=[]
@@ -565,7 +565,8 @@ dbc.Row([
     ),
  
 ], justify="center", align="center"),
-
+dcc.Store(id="shared-data", storage_type="memory",clear_data=True, data={} ),
+##  store_data={}
             dbc.Row([
                 *self.graph 
             ], justify="start") 
