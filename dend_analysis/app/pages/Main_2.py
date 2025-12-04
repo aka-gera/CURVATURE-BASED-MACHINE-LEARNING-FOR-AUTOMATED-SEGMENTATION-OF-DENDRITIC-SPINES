@@ -15,6 +15,7 @@ import subprocess
 def restart_apps():
     try: 
         subprocess.run(["pkill", "-f", "gunicorn"], check=False) 
+        time.sleep(2) 
         subprocess.Popen([
             "python", "-m", "gunicorn.app.wsgiapp",
             "-w", "4",
