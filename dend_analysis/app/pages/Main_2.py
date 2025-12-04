@@ -27,6 +27,9 @@ def restart_apps():
         return f"Error restarting: {e}"
     
 
+def async_restart():
+    restart_apps()
+
 def restart_appsx():
     try:
         # Kill existing gunicorn/app processes
@@ -109,12 +112,12 @@ def display_filenames(filenames,restart_clicks, *values):
     *other_values, contents, filenames, last_modified, objs_path_org = values
     export_dir = os.path.dirname(objs_path_org)
     nam = os.path.basename(objs_path_org)
-
-    if restart_clicks: 
-        # contents=None
-        # values=None 
-        restart_apps()
+ 
+    if restart_clicks:
+        threading.Thread(target=async_restart).start()
         return html.Div("Restart requested"), {}
+
+        
     hhg=[f for f in os.listdir(objs_path_org) if os.path.isdir(os.path.join(objs_path_org, f))]
     print('[[[[[[[[[[[[- FILE NAMES -]]]]]]]]]]]]' ,filenames,nam,export_dir,hhg)
     dend_names_chld = {} 
