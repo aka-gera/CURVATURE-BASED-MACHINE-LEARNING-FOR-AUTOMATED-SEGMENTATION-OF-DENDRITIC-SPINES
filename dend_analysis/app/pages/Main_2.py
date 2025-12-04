@@ -85,7 +85,7 @@ for gval in list(set(param['param_input']['param'])):
         Output(f"collapse-{gval}", "is_open"),
         Input(f"collapse-header-{gval}", "n_clicks"),
         State(f"collapse-{gval}", "is_open"),
-        prevent_initial_call=True
+        prevent_initial_call=False
     )
     def toggle_collapse(n_clicks, is_open, gval=gval):
         if n_clicks:
@@ -193,6 +193,7 @@ def update_output(n_clicks, store_datas):
     )
      
     return    
+
 
 
 
