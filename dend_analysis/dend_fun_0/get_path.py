@@ -255,10 +255,10 @@ class get_name:
         self.inten_file_model_head_neck.extend(self.inten_file_model_spine_loss)
         self.inten_file_model_head_neck.extend(self.inten_file_model_shap)
         self.inten_pca=['pca_1_norm','pca_2_norm','pca_3_norm','volume','area','energy','division',]
-        self.inten_file_sub=["path","spine_intensity",  'skl_shaft_distance',  'spine_shaft_length',"intensity_head_neck_segm",  'intensity_spines_segment','intensity_spines_segment_shaft',]
-        self.inten_file_sub_name=["path","Segmentation",  'skl Shaft Distance',  'Length sp. skl to sh. skl.',"Head Neck Segm.", 'intensity_spines_segment','intensity_spines_segment_shaft', ] 
+        self.inten_file_sub=["path","spine_intensity",  "intensity_head_neck_segm",  'intensity_spines_segment','intensity_spines_segment_shaft',]
+        self.inten_file_sub_name=["path","Segmentation","Head Neck Segm.", 'intensity_spines_segment','intensity_spines_segment_shaft', ] 
         self.inten_file=[] 
-        self.inten_file_train=['skl_distance',]#"gauss_curv_smooth",'Annotation','spine_annot',"mean_curv_smooth","gauss_curv_init","mean_curv_init","intensity_shaft_neck_head",'intensity_shaft_spine','intensity_1hot_shaft_spine', 'intensity_1hot_shaft_neck_head']
+        self.inten_file_train=['skl_distance','skl_shaft_distance',  ]#'spine_shaft_length',  'skl Shaft Distance',  'Length sp. skl to sh. skl.',"gauss_curv_smooth",'Annotation','spine_annot',"mean_curv_smooth","gauss_curv_init","mean_curv_init","intensity_shaft_neck_head",'intensity_shaft_spine','intensity_1hot_shaft_spine', 'intensity_1hot_shaft_neck_head']
         self.dend_file=['vertices_head','vertices_neck','vertices_spine','faces_head','faces_neck','faces_spine', "vertices_1","vertices_0",'faces_0']  
         self.inttt=[]
         self.inttt.extend(self.inten_file_sub)  
@@ -1591,6 +1591,7 @@ class get_app_param(get_name ):
 
 
         metric_name.extend(['heatmap_cylinder','heatmap_cylinder_surface'])
+        metric_name.extend(self.metrics_keys)
         # metric_name.extend(['heatmap_iou','heatmap_iou_union','histogram_iou'])
         self.metric_mapping = {
             "name": metric_name,

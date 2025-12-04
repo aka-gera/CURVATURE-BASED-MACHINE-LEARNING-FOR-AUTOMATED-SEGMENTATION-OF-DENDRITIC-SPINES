@@ -368,10 +368,17 @@ class app_param(get_files,get_app_param):
                     vds=[1,-1]
                     valss=['Shaft','Spine']
                     figg=go.Figure()
-                    tyy =self.inten_file_model_shap[0]  
-                    self.model_shap=[]    
-                    iou_path=self.path_file_sub[tyy][id_path] 
+                    # tyy =self.inten_file_model_shap[0]  
+                    # iou_path=self.path_file_sub[tyy][id_path] 
+                    self.model_shap=[]   
+                    head_neck_path = 'dest_shaft_path'
+                    pathh=path_train[head_neck_path]
+                    spine_path_save=     self.path_file[f'result_{pathh}']
+                    iou_path=os.path.join(spine_path_save,'shap.csv') 
+                     
                     if os.path.exists(iou_path):
+                        # print('---------------->>>>>>>>><<<<<<<<<<<<<<<,,',iou_path)
+
                         df = pd.read_csv(iou_path)   
                         for nam,cl,vd,va in zip(df.columns[1:],clor,vds,valss):
                             figg.add_trace(
@@ -849,7 +856,7 @@ class app_param(get_files,get_app_param):
 
                                     
 
-            elif mode == 'model_shap' and os.path.exists(self.path_file_sub[mode][id_path]):
+            elif mode == 'model_shap':
                 # figure=self.model_shap_dic[id_path]
                 # print('figure',figure)
                 figure=akp.Plotly_Figure(data= self.model_shap_dic[id_path]['data'], layout=self.model_shap_dic[id_path]['layout'])
@@ -1080,8 +1087,6 @@ class app_param(get_files,get_app_param):
             spine_path_save=     self.path_file[f'result_{id_path}']
             metric_path=os.path.join( spine_path_save,'metrics.csv') 
             # figure=akp.Plotly_Figure(data=[],layout=None)
-            subplot_titles=('Histogram','KL Divergence D_KL(P||Q)')
-            figure=akp.Plotly_Figure_Sub( subplot_titles,rows=2, cols=1, )
             # figure.update_layout(scene=self.scene)  
 
             scolor=['blue','red','yellow','purple','green']
@@ -1095,24 +1100,25 @@ class app_param(get_files,get_app_param):
             df_save[name]['ann']=['blue',.6,0.98,0.95]
             df_save[name]['path']=metric_path
             if os.path.exists(df_save[name]['path']):  
-                df_save[name]['df']=df = pd.read_csv(df_save[name]['path'])  
-                df=df[df[df.columns[0]].astype(str).str.startswith(tuple(dend_names))] 
+                df_save[name]['df']=df = pd.read_csv(df_save[name]['path'])   
+                # df=df[df[df.columns[0]].astype(str).str.startswith(tuple(dend_names))] 
                 df_save[name]['df']=  df
                 if mode in df.columns:  
                     xmax=max(xmax,max(df[mode]))
                     xmin=min(xmin,min(df[mode]))
-
+            namesan=[]
             names=[]
             for ii in range(1,5):
-                name=f'Annot_{ii}'
-                names.append(name)
-                df_save[name]={}
                 data_name=f'spine_head_analysis.trial_{ii}.dat' 
                 df_save[name]['ann']=[scolor[ii],.5,0.98,0.95-(ii*0.07)/1.3] 
-                df_save[name]['path']=hff.get_conversion_file(data_path=data_path,data_name=data_name)
-                if os.path.exists(df_save[name]['path']):
+                if os.path.exists( os.path.join(data_path,data_name)):
+                    name=f'Annot_{ii}'
+                    names.append(name)
+                    namesan.append(name)
+                    df_save[name]={}
+                    df_save[name]['path']=hff.get_conversion_file(data_path=data_path,data_name=data_name)
                     df = pd.read_csv(df_save[name]['path'])  
-                    df=df[df[df.columns[0]].astype(str).str.startswith(tuple(dend_names))] 
+                    # df=df[df[df.columns[0]].astype(str).str.startswith(tuple(dend_names))] 
                     df_save[name]['df']=  df
                     if mode in df.columns:  
                         xmax=max(xmax,max(df[mode]))
@@ -1122,6 +1128,11 @@ class app_param(get_files,get_app_param):
             xaxis_title,yaxis_title='P','Q'
 
 
+            if len(namesan)>0 :
+                subplot_titles=('Histogram','KL Divergence D_KL(P||Q)')
+                figure=akp.Plotly_Figure_Sub( subplot_titles,rows=2, cols=1, )
+            else:
+                figure= akp.Plotly_Figure(data=[],layout=None)
 
             for name in names:
                 df = df_save[name]['df']
@@ -1140,7 +1151,10 @@ class app_param(get_files,get_app_param):
                                                                                 opacity=opacity,
                                                                                 color=color,
                                                                                 name=name,)
-                        figure.add_trace( scatter_metric, row=1, col=1)
+                        if len(namesan)>0 :
+                            figure.add_trace( scatter_metric, row=1, col=1)
+                        else:
+                            figure.add_trace( scatter_metric )
                         cname=f'Count {name}  ' if name=='Approx' else f'Count {name}' 
                         figure.add_annotation(
                             text=f'{cname}: {len(df[mode])}',
@@ -1151,20 +1165,24 @@ class app_param(get_files,get_app_param):
                             showarrow=False,
                             font=dict(size=22)
                         )  
-                        figure.update_layout(layout_metric)
-                        
 
-                    scatter,layout=compute_kl(df_save,names,mode,width,height,bins =nbin)
-                    figure.add_trace( scatter, row=2, col=1)
-                    figure.update_layout(layout )
-                    figure.update_layout(
-                    # title=title,
-                    xaxis2_title=xaxis_title,
-                    yaxis2_title=yaxis_title,
-                    # xaxis=dict(tickmode='array', tickvals=list(range(len(labels))), ticktext=labels),
-                    # yaxis=dict(tickmode='array', tickvals=list(range(len(labels))), ticktext=labels), 
-                )
-                    figure.update_layout(height=1.3*height, width=width)
+                    figure.update_layout(layout_metric)
+                        
+                    if len(namesan)>0 :
+                        scatter,layout=compute_kl(df_save,names,mode,width,height,bins =nbin)
+                        figure.add_trace( scatter, row=2, col=1)
+                        figure.update_layout(layout )
+                        figure.update_layout(
+                        # title=title,
+                        xaxis2_title=xaxis_title,
+                        yaxis2_title=yaxis_title,
+                        # xaxis=dict(tickmode='array', tickvals=list(range(len(labels))), ticktext=labels),
+                        # yaxis=dict(tickmode='array', tickvals=list(range(len(labels))), ticktext=labels), 
+                        )
+                        figure.update_layout(height=1.3*height, width=width)
+                    else:
+                        figure.update_layout(height=height, width=width)
+
  
 
         else:

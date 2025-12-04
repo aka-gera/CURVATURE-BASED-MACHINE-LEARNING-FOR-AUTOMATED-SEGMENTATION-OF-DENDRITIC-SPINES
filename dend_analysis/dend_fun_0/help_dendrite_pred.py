@@ -1287,8 +1287,13 @@ class dendrite_pred(get_files,get_name):
             feat[f'Mean SHAP Values {idx+1}'] = mean_shap[:, idx]
 
         shap_df = pd.DataFrame(feat).sort_values(by='Mean SHAP Values 1', ascending=False)
-        shap_df.to_csv(self.shap_dir, index=False)
+        # shap_df.to_csv(self.shap_dir, index=False)
 
+
+        head_neck_path = 'dest_shaft_path'
+        path=path_train[head_neck_path]
+        spine_path_save=     self.path_file[f'result_{path}']   
+        shap_df.to_csv(os.path.join(spine_path_save,'shap.csv') , index=False)
 
 
 
