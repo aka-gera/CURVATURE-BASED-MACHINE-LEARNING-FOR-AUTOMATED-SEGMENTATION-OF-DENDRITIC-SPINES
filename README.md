@@ -13,7 +13,7 @@ chmod +x setup.sh
 cd dend_analysis
 python3.11 -m venv ../dsa_venv
 source ../dsa_venv/bin/activate
-python -m  gunicorn -w 4 -b 0.0.0.0:8050 wsgi:server -c gunicorn.conf.py
+python -m  gunicorn -w 4 -b 0.0.0.0:8050 wsgi:server  --timeout 1200 -c gunicorn.conf.py
 
 ```
 This will:
@@ -60,7 +60,7 @@ Once the browser window opens:
   - Enable the **“clean_path_dir”** box to clear previous output directories before running new segmentation.  
 
 - **Run Analysis**  
-  - Click to run the segmentation after all parameters are set up.
+  -Double Click to run the segmentation after all parameters are set up.
  
 
 
