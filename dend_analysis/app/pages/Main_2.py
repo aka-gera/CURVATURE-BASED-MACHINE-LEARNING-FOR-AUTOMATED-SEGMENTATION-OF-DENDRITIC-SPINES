@@ -158,15 +158,15 @@ def display_filenames(filenames,restart_clicks,n_clicks, *values):
     if contents is None:
         display = html.Div([
             html.H4("No files uploaded yet. Directory has:"),
-            html.H4(f"--------{param['Smooth']}"),
-            html.H4(f"--------{[param[gval]['param']    for gval in param['param_dropdown']['param']]}"),
+            # html.H4(f"--------{param['Smooth']}"),
+            # html.H4(f"--------{[param[gval]['param']    for gval in param['param_dropdown']['param']]}"),
             html.Ul([html.Li(name) for name in [f for f in os.listdir(objs_path_org) if os.path.isdir(os.path.join(objs_path_org, f))]])
         ])
     else:
         display = html.Div([
             html.H4("Uploaded Files"),
-            html.H4(f"--------{param['Smooth']}"),
-            html.H4(f"--------{[param[gval]['param']    for gval in param['param_dropdown']['param']]}"),
+            # html.H4(f"--------{param['Smooth']}"),
+            # html.H4(f"--------{[param[gval]['param']    for gval in param['param_dropdown']['param']]}"),
             html.Ul([html.Li(name) for name in filenames])
         ]) 
 
