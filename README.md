@@ -61,6 +61,9 @@ Once the browser window opens:
 
 - **Run Analysis**  
   -Double Click to run the segmentation after all parameters are set up.
+  
+- **Restart**  
+  -Click the **Restart** button to kill and restart the process.
  
 
 
@@ -85,6 +88,7 @@ Once segmentation has terminated, you can check the results by following these s
 ```bash
 python -m  gunicorn -w 4 -b 0.0.0.0:8050 wsgi:server -c gunicorn.conf.py
 ```
+3. Alternatively, use the **Restart button** in the interface and then refresh your browser page.
 
 ## Navigating the Interface
 
