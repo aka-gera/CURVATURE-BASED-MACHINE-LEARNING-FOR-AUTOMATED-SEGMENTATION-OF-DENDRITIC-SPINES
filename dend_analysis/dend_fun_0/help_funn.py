@@ -1304,6 +1304,7 @@ def get_change_name(data_name,split_char,ext):
 
 def get_conversion_file(data_path,data_name,split_char='.',ext='csv'):
     data_path0=os.path.join(data_path,data_name)
+    
     with open(data_path0, 'r') as file:
         lines = file.readlines() 
 

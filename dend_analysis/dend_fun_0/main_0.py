@@ -18,6 +18,7 @@ DTYPE='float32'
    
 from dend_fun_0.help_dendrite_pred import dendrite_pred 
 from dend_fun_0.get_path import get_name,get_configs,get_path_train,get_data_mode  
+from dend_fun_0.side_bar import  dnn_page
 
 file_path_parent=os.path.dirname(file_path_org)
 file_path_parent=os.path.join(file_path_parent,'meshes')
@@ -399,7 +400,7 @@ class app_run_param:
             param[gval]['option'] = dcc.Dropdown(
                 options=dropdown_option,
                 id=idx,
-                value=dropdown_option[0]['value'],   # default to first value
+                value=dropdown_option[-1]['value'],   # default to first value
                 placeholder=f'Select {gval}',
                 style=box_style
             )
@@ -429,8 +430,7 @@ class app_run_param:
                             html.H5(f"{gval}",
                                     id=f"collapse-header-{gval}",
                                     className="card-title", 
-                                    style={"cursor": "pointer"}),
-
+                                    style={"cursor": "pointer"}), 
                             width=9,
                             style={'display': 'flex', 'alignItems': 'center'}
                         ),
@@ -476,26 +476,48 @@ class app_run_param:
                     ),
                 ]),
                 style={"marginBottom": "20px", "boxShadow": "0 2px 6px rgba(0,0,0,0.15)"}
-            )
- 
+            ) 
             self.graph.append(
                 dbc.Col(
                     param[gval]['option'],
-                    xs=12, sm=6, md=4, lg=3,  
-                    style={'marginBottom': '20px'}
+                    xs=12, sm=6, md=4, lg=3, 
+                    style={'marginBottom': '20px'},
                 )
-            )
-
-        self.Input=[Input(idx, 'value') for idx in self.Input_id]
-
+            ) 
+        self.Input=[Input(idx, 'value') for idx in self.Input_id] 
         self.prevent_initial_call=True  
         self.app_layout = html.Div([
+
+
+dbc.Row([
+    dbc.Card(
+        dbc.CardBody([ 
+            html.Div(
+                dcc.Markdown('# Dendritic Spines Analysis',
+                             style={'textAlign': 'center', 'color': 'white'}),
+                id="toggle-text-starting",
+                n_clicks=0,   
+                style={"cursor": "pointer"}  
+            ),
+            html.Hr(),
+            dbc.Collapse(
+                dcc.Markdown(dnn_page()['starting']),
+                id="collapse-starting",
+                is_open=False
+            ),
+        ]),
+        style={"margin": "10px", "padding": "10px"}
+    )
+], justify="start"),
+
+
+
 dbc.Row([
     # Left card: Run button
     dbc.Col(
         dbc.Card(
             dbc.CardBody([
-                dbc.Button("Run Analysis", id="run-button", n_clicks=0, color="primary")
+                dbc.Button("Run", id="run-button", n_clicks=0, color="primary")
             ]),
             style={"margin": "7px", "padding": "7px"}
         ),
@@ -535,7 +557,13 @@ dbc.Row([
                     },
                     multiple=True
                 ),
-                html.Div(id='output-file-upload', style={'color': 'white', 'marginTop': 20})
+                html.Div(id='output-file-upload', style={'color': 'white', 'marginTop': 20}),
+                html.Hr(style={'borderTop': '2px dashed white', 'margin': '20px 0'}),
+                dbc.Card([
+                    html.H3("Press Run to Start",
+                            id="run-status",
+                            style={'color': 'lightgreen', 'textAlign': 'center'})
+                ]),
             ]),
             style={
                 "margin": "10px",
@@ -566,10 +594,41 @@ dbc.Row([
  
 ], justify="center", align="center"),
 dcc.Store(id="shared-data", storage_type="memory",clear_data=True, data={} ),
+
 ##  store_data={}
             dbc.Row([
                 *self.graph 
-            ], justify="start") 
+            ], justify="start") , 
+
+dbc.Row([
+    dbc.Card(
+        dbc.CardBody([ 
+            html.Div(
+                dcc.Markdown('# Checking Results After Segmentation',
+                             style={'textAlign': 'center', 'color': 'white'}),
+                id="toggle-text",
+                n_clicks=0,   # makes it clickable
+                style={"cursor": "pointer"}  
+            ),
+            html.Hr(),
+            dbc.Collapse(
+                dcc.Markdown(dnn_page()['results']),
+                id="collapse-result",
+                is_open=False
+            ),
+        ]),
+        style={"margin": "10px", "padding": "10px"}
+    )
+], justify="start"),
+
+dbc.Row([
+    dbc.Col(
+        dcc.Markdown(
+            "[🔗 View the full repository on GitHub](https://github.com/aka-gera/CURVATURE-BASED-MACHINE-LEARNING-FOR-AUTOMATED-SEGMENTATION-OF-DENDRITIC-SPINES)",
+            style={"textAlign": "center", "color": "white"}
+        )
+    )
+], justify="center")
         ])
  
 

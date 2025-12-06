@@ -24,7 +24,8 @@ DTYPE='float32'
 DTYPE = tf.float32
  
  
-from dend_fun_0.get_path import get_text_dash_train,get_text_dash_all,get_text_dash_test,assign_if_none,get_name,get_param,get_files,remove_directory,safe_id,get_text_dash_dnn
+from dend_fun_0.get_path import assign_if_none,get_name,get_param,get_files,remove_directory,safe_id
+from dend_fun_0.side_bar import  get_text_dash_train,get_text_dash_all,get_text_dash_test,get_text_dash_dnn
 
 device = "/GPU:0" if tf.config.list_physical_devices('GPU') else "/CPU:0"  
 from tqdm import tqdm 
@@ -1716,6 +1717,7 @@ class dendrite_pred(get_files,get_name):
                                 pinn_dir_data=None,
                                 dend_data=None,
                                 index=None,
+                                page_view='results', 
                                 )
 
 
@@ -1735,6 +1737,7 @@ class dendrite_pred(get_files,get_name):
                                 pinn_dir_data=None,
                                 dend_data=None,
                                 index=None,
+                                page_view='visualization', 
                                 )
 
             id_name_end=self.dend_path_inits[index]
@@ -1751,6 +1754,7 @@ class dendrite_pred(get_files,get_name):
                                 pinn_dir_data=None,
                                 dend_data=None,
                                 index=None,
+                                page_view='visualization', 
                                 )
 
 
