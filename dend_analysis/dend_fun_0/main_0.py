@@ -408,9 +408,12 @@ class app_run_param:
             self.graph.append(
                 dbc.Col(
                     param[gval]['option'],
-                    xs=12, sm=6, md=4, lg=3,  # full width on mobile, 2 per row on small, 3 per row on medium, 4 per row on large
+                    # xs=12, sm=6, md=4, lg=3,  # full width on mobile, 2 per row on small, 3 per row on medium, 4 per row on large
+                     xs=12, sm=6, md=4, lg=3, 
+                    #width=3,
                     
-                    style={'borderRight': '1px solid #ccc', 'paddingRight': '15px'}
+                    style={    "width": "100%" }
+                    # style={'borderRight': '1px solid #ccc', 'paddingRight': '15px', "width": "100%" }
                                 )
             )
   
@@ -481,156 +484,210 @@ class app_run_param:
                 dbc.Col(
                     param[gval]['option'],
                     xs=12, sm=6, md=4, lg=3, 
-                    style={'marginBottom': '20px'},
+                   #  width=3,
+                    style={'marginBottom': '20px', "width": "100%" },
                 )
-            ) 
+            )  
+            # self.graph.append( 
+            #         param[gval]['option'], 
+            # )  
+
+    
+        
         self.Input=[Input(idx, 'value') for idx in self.Input_id] 
-        self.prevent_initial_call=True  
+        self.prevent_initial_call=True 
+
         self.app_layout = html.Div([
+            dcc.Store(id="shared-data", storage_type="memory", clear_data=True, data={}),
 
+            # Wrap the whole thing in a Card
+            dbc.Card(
+                dbc.CardBody([
+                    dbc.Row([
+                        # Left column
+                        dbc.Col(
+                            [
+                                # Buttons row
+                                dbc.Row([
+                                    dbc.Col(
+                                        dbc.Card(
+                                            dbc.CardBody([
+                                                dbc.Button("Run", id="run-button", n_clicks=0, color="primary")
+                                            ]),
+                                            style={"margin": "7px", "padding": "7px"}
+                                        ),
+                                        width="auto"
+                                    ),
+                                    dbc.Col(
+                                        dbc.Card(
+                                            dbc.CardBody([
+                                                dbc.Button("Restart", id="restart-button", n_clicks=0, color="primary")
+                                            ]),
+                                            style={"margin": "5px", "padding": "5px"}
+                                        ),
+                                        width="auto"
+                                    ),
+                                ], justify="center", align="center"),
 
-dbc.Row([
-    dbc.Card(
-        dbc.CardBody([ 
-            html.Div(
-                dcc.Markdown('# Dendritic Spines Analysis',
-                             style={'textAlign': 'center', 'color': 'white'}),
-                id="toggle-text-starting",
-                n_clicks=0,   
-                style={"cursor": "pointer"}  
-            ),
-            html.Hr(),
-            dbc.Collapse(
-                dcc.Markdown(dnn_page()['starting']),
-                id="collapse-starting",
-                is_open=False
-            ),
-        ]),
-        style={"margin": "10px", "padding": "10px"}
-    )
-], justify="start"),
+                                # Destination input card 
+                                dbc.Col(
+                                    dbc.Card(
+                                        dbc.CardBody([
+                                            dbc.Row([ 
+                                                    dcc.Markdown('Add Destination', style={'textAlign': 'center', 'color': 'white'}),
+                                                    html.Hr(),
+                                                    dcc.Input(
+                                                        id="id-destination",
+                                                        type="text",
+                                                        value=file_path_parent,
+                                                        style={'width': '100%' }
+                                                    )
+                                            ], style={'marginBottom': '10px'}),
+                        
+                                            # html.Hr(style={
+                                            #     "borderTop": "1px solid #ccc",
+                                            #     "marginTop": "0.5rem",
+                                            #     "marginBottom": "1rem"
+                                            # }),  
+                                        ]),
+                                        style={"marginBottom": "20px", "boxShadow": "0 2px 6px rgba(0,0,0,0.15)"}
+                                    ) ,
+                                xs=12, sm=6, md=4, lg=3,  
+                                style={'marginBottom': '20px', "width": "100%" },
+                                ),
+                                # Parameter cards
+                                *self.graph
+                            ],
+                            width=4,
+                            style={"padding": "10px", "borderRight": "1px solid #ccc"}
+                        ),
 
+                        # Right column
+                        dbc.Col(
+                            [
+                                dbc.Row([
+                                    dbc.Card(
+                                        dbc.CardBody([
+                                            html.Div(
+                                                dcc.Markdown('# Dendritic Spines Analysis',
+                                                            style={'textAlign': 'center', 'color': 'white'})
+                                            )
+                                        ]),
+                                        style={"margin": "10px", "padding": "10px"}
+                                    )
+                                ], justify="start"),
 
+                                # Upload card
+                                dbc.Row([
+                                    dbc.Col(
+                                        dbc.Card(
+                                            dbc.CardBody([
+                                                dcc.Markdown('### Upload File', style={'textAlign': 'center', 'color': 'white'}),
+                                                html.Hr(),
+                                                dcc.Upload(
+                                                    id='upload-data',
+                                                    children=html.Div([
+                                                        'Drag and Drop or ',
+                                                        html.A('Select Files')
+                                                    ]),
+                                                    style={
+                                                        'width': '100%',
+                                                        'height': '60px',
+                                                        'lineHeight': '60px',
+                                                        'borderWidth': '1px',
+                                                        'borderStyle': 'dashed',
+                                                        'borderRadius': '5px',
+                                                        'textAlign': 'center',
+                                                        'margin': '10px',
+                                                        'color': 'white'
+                                                    },
+                                                    multiple=True
+                                                ),
+                                                html.Div(id='output-file-upload', style={'color': 'white', 'marginTop': 20}),
+                                                html.Hr(style={'borderTop': '2px dashed white', 'margin': '20px 0'}),
+                                                dbc.Card([
+                                                    html.H3("Press Run to Start",
+                                                            id="run-status",
+                                                            style={'color': 'lightgreen', 'textAlign': 'center'})
+                                                ]),
+                                            ]),
+                                            style={
+                                                "margin": "10px",
+                                                "padding": "10px",
+                                                "backgroundColor": "#2c2c2c",
+                                                "width": "100%"
+                                            }
+                                        ),
+                                        width='auto'
+                                    )
+                                ], justify="center", align="center"),
 
-dbc.Row([
-    # Left card: Run button
-    dbc.Col(
-        dbc.Card(
-            dbc.CardBody([
-                dbc.Button("Run", id="run-button", n_clicks=0, color="primary")
-            ]),
-            style={"margin": "7px", "padding": "7px"}
-        ),
-        width="auto"
-    ),
-    dbc.Col(
-        dbc.Card(
-            dbc.CardBody([
-                dbc.Button("Restart", id="restart-button", n_clicks=0, color="primary")
-            ]),
-            style={"margin": "5px", "padding": "5px"}
-        ),
-        width="auto"
-    ),
-    # Middle card: Upload File
-    dbc.Col(
-        dbc.Card(
-            dbc.CardBody([
-                dcc.Markdown('### Upload File', style={'textAlign': 'center', 'color': 'white'}),
-                html.Hr(),
-                dcc.Upload(
-                    id='upload-data',
-                    children=html.Div([
-                        'Drag and Drop or ',
-                        html.A('Select Files')
-                    ]),
-                    style={
-                        'width': '100%',
-                        'height': '60px',
-                        'lineHeight': '60px',
-                        'borderWidth': '1px',
-                        'borderStyle': 'dashed',
-                        'borderRadius': '5px',
-                        'textAlign': 'center',
-                        'margin': '10px',
-                        'color': 'white'
-                    },
-                    multiple=True
-                ),
-                html.Div(id='output-file-upload', style={'color': 'white', 'marginTop': 20}),
-                html.Hr(style={'borderTop': '2px dashed white', 'margin': '20px 0'}),
-                dbc.Card([
-                    html.H3("Press Run to Start",
-                            id="run-status",
-                            style={'color': 'lightgreen', 'textAlign': 'center'})
+                                # Parameters & Results cards
+                                dbc.Row([
+                                    dbc.Card(
+                                        dbc.CardBody([
+                                            html.Div(
+                                                dcc.Markdown('### Parameters & Options',
+                                                            style={'textAlign': 'center', 'color': 'white'}),
+                                                id="toggle-text-starting",
+                                                n_clicks=0,
+                                                style={"cursor": "pointer"}
+                                            ),
+                                            html.Hr(),
+                                            dbc.Collapse(
+                                                dcc.Markdown(dnn_page()['starting']),
+                                                id="collapse-starting",
+                                                is_open=False
+                                            ),
+                                        ]),
+                                        style={"margin": "10px", "padding": "10px"}
+                                    ),
+                                    dbc.Card(
+                                        dbc.CardBody([
+                                            html.Div(
+                                                dcc.Markdown('### Checking Results After Segmentation',
+                                                            style={'textAlign': 'center', 'color': 'white'}),
+                                                id="toggle-text",
+                                                n_clicks=0,
+                                                style={"cursor": "pointer"}
+                                            ),
+                                            html.Hr(),
+                                            dbc.Collapse(
+                                                dcc.Markdown(dnn_page()['results']),
+                                                id="collapse-result",
+                                                is_open=False
+                                            ),
+                                        ]),
+                                        style={"margin": "10px", "padding": "10px"}
+                                    ),
+                                ], justify="start"),
+
+                                # GitHub link
+                                dbc.Row([
+                                    dbc.Col(
+                                        dcc.Markdown(
+                                            "[View the full repository on GitHub](https://github.com/aka-gera/CURVATURE-BASED-MACHINE-LEARNING-FOR-AUTOMATED-SEGMENTATION-OF-DENDRITIC-SPINES)",
+                                            style={"textAlign": "center", "color": "white"}
+                                        )
+                                    )
+                                ], justify="center")
+                            ],
+                            width=8,
+                            style={"padding": "10px"}
+                        )
+                    ])
                 ]),
-            ]),
-            style={
-                "margin": "10px",
-                "padding": "10px",
-                "backgroundColor": "#2c2c2c",
-                "width": "350px"
-            }
-        ),
-        width='auto'
-    ),
- 
-    dbc.Col(
-        dbc.Card(
-            dbc.CardBody([
-                dcc.Markdown('Add Destination', style={'textAlign': 'center', 'color': 'white'}),
-                html.Hr(),
-                dcc.Input(
-                    id="id-destination",
-                    type="text",
-                    value=file_path_parent,
-                    style={'width': '300px', 'marginLeft': 'auto'}
-                )
-            ]),
-            style={"margin": "10px", "padding": "10px"}
-        ),
-        width="auto"
-    ),
- 
-], justify="center", align="center"),
-dcc.Store(id="shared-data", storage_type="memory",clear_data=True, data={} ),
-
-##  store_data={}
-            dbc.Row([
-                *self.graph 
-            ], justify="start") , 
-
-dbc.Row([
-    dbc.Card(
-        dbc.CardBody([ 
-            html.Div(
-                dcc.Markdown('# Checking Results After Segmentation',
-                             style={'textAlign': 'center', 'color': 'white'}),
-                id="toggle-text",
-                n_clicks=0,   # makes it clickable
-                style={"cursor": "pointer"}  
-            ),
-            html.Hr(),
-            dbc.Collapse(
-                dcc.Markdown(dnn_page()['results']),
-                id="collapse-result",
-                is_open=False
-            ),
-        ]),
-        style={"margin": "10px", "padding": "10px"}
-    )
-], justify="start"),
-
-dbc.Row([
-    dbc.Col(
-        dcc.Markdown(
-            "[🔗 View the full repository on GitHub](https://github.com/aka-gera/CURVATURE-BASED-MACHINE-LEARNING-FOR-AUTOMATED-SEGMENTATION-OF-DENDRITIC-SPINES)",
-            style={"textAlign": "center", "color": "white"}
-        )
-    )
-], justify="center")
+                style={
+                    "margin": "20px",
+                    "padding": "20px",
+                    "boxShadow": "0 4px 12px rgba(0,0,0,0.2)",
+                    "backgroundColor": "#1e1e1e",
+                    "maxWidth": "95%",   # scale control
+                    "marginLeft": "auto",
+                    "marginRight": "auto"
+                }
+            )
         ])
- 
 
     def rebuild_param(self,*values):
         param=self.param 
