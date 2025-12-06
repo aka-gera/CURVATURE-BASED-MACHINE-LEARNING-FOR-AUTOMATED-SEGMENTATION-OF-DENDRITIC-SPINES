@@ -618,7 +618,7 @@ class app_run_param:
                                                 "width": "100%"
                                             }
                                         ),
-                                        width='auto'
+                                        width='11'
                                     )
                                 ], justify="center", align="center"),
 
