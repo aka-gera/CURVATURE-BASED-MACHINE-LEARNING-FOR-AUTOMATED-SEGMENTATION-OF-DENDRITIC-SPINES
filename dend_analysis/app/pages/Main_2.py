@@ -12,6 +12,22 @@ from dend_fun_0.obj_get import parse_obj_upload
 from  dend_fun_0.main_0 import app_run_param,algorithm,algorithm_param,get_data, get_data_all
 import threading
 import subprocess
+
+
+def restart_appsx():
+    try:
+        # Kill existing gunicorn/app processes
+        subprocess.run(["pkill", "-f", "python"], check=False)
+
+        # Relaunch the app script directly
+        subprocess.Popen([
+            "/usr/bin/python3", "app/app.py"
+        ])
+        return "Restart triggered!"
+    except Exception as e:
+        return f"Error restarting: {e}"
+
+
 def restart_apps():
     try: 
         subprocess.run(["pkill", "-f", "gunicorn"], check=False) 
@@ -80,6 +96,7 @@ def layout():
 #     return  
 
 
+
 for gval in list(set(param['param_input']['param'])):
     @callback(
         Output(f"collapse-{gval}", "is_open"),
@@ -91,36 +108,71 @@ for gval in list(set(param['param_input']['param'])):
         if n_clicks:
             return not is_open
         return is_open
-    
 
 @callback(
-    Output("output-file-upload", "children"),
-    Output("shared-data", "data"),   # save to store
-   [Input("upload-data", "filename"), 
-     Input("restart-button", "n_clicks"),
-    Input("run-button", "n_clicks"),],
-     # # # Input("upload-data", "filename"), 
-    [State(idx, "value") for idx in mapp.Input_id] + [
-        State("upload-data", "contents"),
-        State("upload-data", "filename"),
-        State("upload-data", "last_modified"),
-        State("id-destination", "value"),
-    ],
-    prevent_initial_call=True
+    Output("collapse-starting", "is_open"),
+    Input("toggle-text-starting", "n_clicks"),
+    State("collapse-starting", "is_open"),
 )
-def display_filenames(filenames,restart_clicks,n_clicks, *values):
+def toggle_collapse(n, is_open):
+    if n:
+        return not is_open
+    return is_open
+
+
+@callback(
+    Output("collapse-result", "is_open"),
+    Input("toggle-text", "n_clicks"),
+    State("collapse-result", "is_open"),
+)
+def toggle_collapse(n, is_open):
+    if n:
+        return not is_open
+    return is_open
+
+
+# @callback(
+#     Output("output-file-upload", "children"),
+#     Output("shared-data", "data"),   # save to store
+#    [Input("upload-data", "filename"), 
+#      Input("restart-button", "n_clicks"),
+#     Input("run-button", "n_clicks"),],
+#      # # # Input("upload-data", "filename"), 
+#     [State(idx, "value") for idx in mapp.Input_id] + [
+#         State("upload-data", "contents"),
+#         State("upload-data", "filename"),
+#         State("upload-data", "last_modified"),
+#         State("id-destination", "value"),
+#     ],
+#     prevent_initial_call=True
+# )
+@callback(
+    [Output("output-file-upload", "children"),
+    # Output("run-status", "children"),
+     Output("shared-data", "data")],
+    [Input("upload-data", "filename"),
+     Input("restart-button", "n_clicks")],
+    #  Input("run-button", "n_clicks") +
+    [Input(idx, "value") for idx in mapp.Input_id],  
+    [State("upload-data", "contents"),
+     State("upload-data", "filename"),
+     State("upload-data", "last_modified"),
+     State("id-destination", "value")],
+    prevent_initial_call=False
+)
+def display_filenames(filenames,restart_clicks,  *values):
     param=mapp.rebuild_param(values)
 
     *other_values, contents, filenames, last_modified, objs_path_org = values
     export_dir = os.path.dirname(objs_path_org)
     nam = os.path.basename(objs_path_org)
  
-    if n_clicks == 0  :
-        raise dash.exceptions.PreventUpdate
-
-    if restart_clicks:
+    if restart_clicks and restart_clicks > 0:
         threading.Thread(target=async_restart).start()
         return html.Div("Restart requested"), {}
+
+    # if n_clicks == 0 and contents is None:
+    #     raise dash.exceptions.PreventUpdate 
 
 
     hhg=[f for f in os.listdir(objs_path_org) if os.path.isdir(os.path.join(objs_path_org, f))]
@@ -157,24 +209,30 @@ def display_filenames(filenames,restart_clicks,n_clicks, *values):
  
     if contents is None:
         display = html.Div([
-            html.H4("No files uploaded yet. Directory has:"),
-            # html.H4(f"--------{param['Smooth']}"),
-            # html.H4(f"--------{[param[gval]['param']    for gval in param['param_dropdown']['param']]}"),
-            html.Ul([html.Li(name) for name in [f for f in os.listdir(objs_path_org) if os.path.isdir(os.path.join(objs_path_org, f))]])
-        ])
+            html.H5("No files uploaded yet.", style={'color': 'white'}),
+            html.H5("Ready to execute file in Directory:", style={'color': 'white'}),
+            html.Ul([
+                html.Li(name, style={'color': 'lightgray'})
+                for name in os.listdir(objs_path_org)
+                if os.path.isdir(os.path.join(objs_path_org, name))
+            ])
+        ], style={'marginTop': 20})
     else:
         display = html.Div([
-            html.H4("Uploaded Files"),
-            # html.H4(f"--------{param['Smooth']}"),
+            html.H5("Uploaded Files", style={'color': 'white'}),
+            html.Ul([html.Li(name) for name in filenames], style={'color': 'white'}),
+            # html.H5(f"--------{param['Smooth']}"),
             # html.H4(f"--------{[param[gval]['param']    for gval in param['param_dropdown']['param']]}"),
-            html.Ul([html.Li(name) for name in filenames])
+            
         ]) 
 
-    return display, store_data
+    return  display, store_data
 
 
-@callback(
-    mapp.Output, 
+@callback(    
+    # [  # status message
+    #  mapp.Output],  
+     Output("run-status", "children"), 
     Input("run-button", "n_clicks"),
     State("shared-data", "data"),
     prevent_initial_call=True
@@ -182,6 +240,7 @@ def display_filenames(filenames,restart_clicks,n_clicks, *values):
 def update_output(n_clicks, store_datas):
     if n_clicks == 0 or not store_datas:
         raise dash.exceptions.PreventUpdate
+    status = "Running..."
     store_data=store_datas.copy()
     store_datas={}
     param = store_data["param"] 
@@ -199,8 +258,9 @@ def update_output(n_clicks, store_datas):
         path_display=path_display,
     )
      
-    return    
+    status = html.H3("Completed!", style={'color': 'lightgreen', 'textAlign': 'center'})
 
+    return status
 
 
 
