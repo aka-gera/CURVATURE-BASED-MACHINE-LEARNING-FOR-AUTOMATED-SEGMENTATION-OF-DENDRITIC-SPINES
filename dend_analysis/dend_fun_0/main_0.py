@@ -24,17 +24,50 @@ file_path_parent=os.path.dirname(file_path_org)
 file_path_parent=os.path.join(file_path_parent,'meshes')
 
 import subprocess
+# def restart_apps(process="gunicorn"):
+#     try: 
+#         subprocess.run(["pkill", "-f", process], check=False) 
+#         subprocess.Popen([
+#             "python3", "-m", "gunicorn.app.wsgiapp",
+#             "-w", "4",
+#             "-b", "0.0.0.0:8050",
+#             "wsgi:server",
+#             "-c", "gunicorn.conf.py"
+#         ])
+#         return "Restart triggered!"
+#     except Exception as e:
+#         return f"Error restarting: {e}"
+import subprocess
+import platform
+
 def restart_apps(process="gunicorn"):
-    try: 
-        subprocess.run(["pkill", "-f", process], check=False) 
-        subprocess.Popen([
-            "python3", "-m", "gunicorn.app.wsgiapp",
-            "-w", "4",
-            "-b", "0.0.0.0:8050",
-            "wsgi:server",
-            "-c", "gunicorn.conf.py"
-        ])
-        return "Restart triggered!"
+    try:
+        system = platform.system()
+
+        if system == "Windows":
+            # Kill any running waitress processes
+            subprocess.run(["taskkill", "/F", "/IM", "python.exe", "/T"], check=False)
+
+            # Start waitress server
+            subprocess.Popen([
+                "python", "-m", "waitress", "--listen=0.0.0.0:8050", "wsgi:server"
+            ])
+            return "Restart triggered using Waitress (Windows)."
+
+        else:
+            # Kill any running gunicorn processes
+            subprocess.run(["pkill", "-f", process], check=False)
+
+            # Start gunicorn server
+            subprocess.Popen([
+                "gunicorn",
+                "-w", "4",
+                "-b", "0.0.0.0:8050",
+                "wsgi:server",
+                "-c", "gunicorn.conf.py"
+            ])
+            return "Restart triggered using Gunicorn (Linux/Unix)."
+
     except Exception as e:
         return f"Error restarting: {e}"
 
