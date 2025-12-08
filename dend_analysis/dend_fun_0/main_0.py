@@ -721,7 +721,10 @@ class app_run_param:
                                             ),
                                             html.Hr(),
                                             dbc.Collapse(
-                                                dcc.Markdown(dnn_page()['results']),
+                                                html.Div([
+                                                    dcc.Markdown(dnn_page()['restart']),
+                                                    dcc.Markdown(dnn_page()['results']),
+                                                ]),
                                                 id="collapse-result",
                                                 is_open=False
                                             ),

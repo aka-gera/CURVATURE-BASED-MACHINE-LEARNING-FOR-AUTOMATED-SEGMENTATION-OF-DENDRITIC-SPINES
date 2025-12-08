@@ -1737,7 +1737,7 @@ class dendrite_pred(get_files,get_name):
                                 pinn_dir_data=None,
                                 dend_data=None,
                                 index=None,
-                                page_view='visualization', 
+                                page_view='results', 
                                 )
 
             id_name_end=self.dend_path_inits[index]

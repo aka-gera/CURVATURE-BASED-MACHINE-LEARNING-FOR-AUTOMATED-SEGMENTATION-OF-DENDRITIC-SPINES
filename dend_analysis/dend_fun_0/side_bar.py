@@ -258,8 +258,7 @@ def dnn_page():
 
 
 
-
-    page['results']= """
+    page['restart']= """
     
     
  
@@ -277,7 +276,15 @@ Once segmentation has terminated, you can check the results by following these s
 python -m  gunicorn -w 4 -b 0.0.0.0:8050 wsgi:server -c gunicorn.conf.py
 ```
 3. Alternatively, use the **Restart button** in the interface and then refresh your browser page.
+ 
+    """
 
+
+    page['results']= """
+     
+
+---
+ 
 ## Navigating the Interface
 
 - On the right of **DSA** (top corner), click on **“PINN”** if the **PINN** method was used.  
@@ -285,8 +292,7 @@ python -m  gunicorn -w 4 -b 0.0.0.0:8050 wsgi:server -c gunicorn.conf.py
 - Click to choose the **file parent name**.  
 - Click on the **mesh name**.  
 - A new page will appear with visualization options.  
-
----
+ 
     """
 
     page['visualization']= """
