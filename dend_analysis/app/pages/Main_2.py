@@ -75,12 +75,15 @@ def free_port(port=8050):
 
 
 
+
 def start_server(): 
     system = platform.system()
-    print('[[[[[[[[[[]]]]]]]]]]',system)
-    if system == "Windows":
+    print('[[[[[[[[[[]]]]]]]]]]',system) 
+    if system == "Windows": 
+        venv_python = os.path.abspath(os.path.join("..", "dsa_venv", "Scripts", "python.exe")) 
         proc = subprocess.Popen([
-            "python", "-m", "waitress", "--listen=0.0.0.0:8050", "wsgi:server"
+            venv_python,
+            "run_app_win.py"
         ])
         msg = f"Waitress started (Windows) with PID {proc.pid}"
     else: 
@@ -327,6 +330,7 @@ def update_output(n_clicks, store_datas):
     status = html.H3("Completed!", style={'color': 'lightgreen', 'textAlign': 'center'})
 
     return status
+
 
 
 
