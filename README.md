@@ -1,7 +1,8 @@
 # CURVATURE-BASED-MACHINE-LEARNING-FOR-AUTOMATED-SEGMENTATION-OF-DENDRITIC-SPINES
 
-## Installation (Mac)
+## Installation 
 
+#### Mac
 Open **Terminal** and paste the commands below:
 ```bash
 cd ~/Desktop
@@ -16,9 +17,40 @@ source ../dsa_venv/bin/activate
 python -m  gunicorn -w 4 -b 0.0.0.0:8050 wsgi:server  --timeout 1200 -c gunicorn.conf.py
 
 ```
+
+#### Windows
+Open **Windows PowerShell** as as Administrator and paste the commands below:
+```bash
+
+$desktopPath = "$HOME\Desktop"
+
+if (-Not (Test-Path $desktopPath)) {
+    Write-Host "Desktop folder not found. Creating $desktopPath ..."
+    New-Item -ItemType Directory -Path $desktopPath
+} else {
+    Write-Host "Desktop folder exists: $desktopPath"
+}
+
+ 
+cd $desktopPath
+
+git clone https://github.com/aka-gera/CURVATURE-BASED-MACHINE-LEARNING-FOR-AUTOMATED-SEGMENTATION-OF-DENDRITIC-SPINES.git
+cd CURVATURE-BASED-MACHINE-LEARNING-FOR-AUTOMATED-SEGMENTATION-OF-DENDRITIC-SPINES
+
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+ .\setup.ps1
+ 
+ 
+cd dend_analysis 
+& ..\dsa_venv\Scripts\Activate.ps1
+ 
+python run_app_win.py
+
+```
 This will:
 - Clone the repository  
-- Install Python 3.9 and required libraries  
+- Install Python 3.11 and required libraries  
 - Create a virtual environment named **`dsa_venv`**  
 - Launch the application in your browser  
  
