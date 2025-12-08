@@ -37,8 +37,7 @@ import platform
 def free_port(port=8050):
     system = platform.system()
 
-    if system in ["Darwin", "Linux"]:
-        # macOS / Linux: use lsof
+    if system in ["Darwin", "Linux"]: 
         result = subprocess.run(["lsof", "-ti", f":{port}"], capture_output=True, text=True)
         pids = result.stdout.strip().splitlines()
         if not pids:
@@ -51,8 +50,7 @@ def free_port(port=8050):
             except Exception as e:
                 print(f"Error killing {pid}: {e}")
 
-    elif system == "Windows":
-        # Windows: use netstat + taskkill
+    elif system == "Windows": 
         result = subprocess.run(
             ["netstat", "-ano"], capture_output=True, text=True
         )
@@ -103,7 +101,13 @@ def start_server():
 def async_restart():
     free_port()
     start_server()
+    # start_server()
 
+
+def async_shutdown():
+    free_port()
+
+    
 def restart_appsx():
     try:
         # Kill existing gunicorn/app processes
@@ -208,7 +212,8 @@ def toggle_collapse(n, is_open):
     # Output("run-status", "children"),
      Output("shared-data", "data")],
     [Input("upload-data", "filename"),
-     Input("restart-button", "n_clicks")],
+     Input("restart-button", "n_clicks"),
+     Input("shutdown-button", "n_clicks")],
     #  Input("run-button", "n_clicks") +
     [Input(idx, "value") for idx in mapp.Input_id],  
     [State("upload-data", "contents"),
@@ -217,13 +222,17 @@ def toggle_collapse(n, is_open):
      State("id-destination", "value")],
     prevent_initial_call=False
 )
-def display_filenames(filenames,restart_clicks,  *values):
+def display_filenames(filenames,restart_clicks,shutdown_clicks,  *values):
     param=mapp.rebuild_param(values)
 
     *other_values, contents, filenames, last_modified, objs_path_org = values
     export_dir = os.path.dirname(objs_path_org)
     nam = os.path.basename(objs_path_org)
  
+    if shutdown_clicks and shutdown_clicks > 0:
+        threading.Thread(target=async_shutdown).start()
+        return html.Div("Shut Down requested"), {}
+
     if restart_clicks and restart_clicks > 0:
         threading.Thread(target=async_restart).start()
         return html.Div("Restart requested"), {}
