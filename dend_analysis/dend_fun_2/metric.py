@@ -627,7 +627,7 @@ def get_center_line(vertices ,
 
 
 
-    vec=align_points(vec) 
+    # vec=align_points(vec) 
     jj=0
     while jj<ctl_run_thre:
         ctl_tmp = center_curvature(vertices=vec, 
