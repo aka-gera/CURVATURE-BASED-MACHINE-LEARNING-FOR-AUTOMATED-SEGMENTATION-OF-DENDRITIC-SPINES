@@ -27,25 +27,82 @@ def restart_appsx():
     except Exception as e:
         return f"Error restarting: {e}"
 
+ 
 
-def restart_apps():
-    try: 
-        subprocess.run(["pkill", "-f", "gunicorn"], check=False) 
-        time.sleep(2) 
-        subprocess.Popen([
+import os
+import signal
+import subprocess
+import platform
+
+def free_port(port=8050):
+    system = platform.system()
+
+    if system in ["Darwin", "Linux"]:
+        # macOS / Linux: use lsof
+        result = subprocess.run(["lsof", "-ti", f":{port}"], capture_output=True, text=True)
+        pids = result.stdout.strip().splitlines()
+        if not pids:
+            print(f"Port {port} is free.")
+            return
+        for pid in pids:
+            try:
+                os.kill(int(pid), signal.SIGTERM)
+                print(f"Killed process {pid} using port {port}")
+            except Exception as e:
+                print(f"Error killing {pid}: {e}")
+
+    elif system == "Windows":
+        # Windows: use netstat + taskkill
+        result = subprocess.run(
+            ["netstat", "-ano"], capture_output=True, text=True
+        )
+        lines = result.stdout.splitlines()
+        pids = []
+        for line in lines:
+            if f":{port}" in line and "LISTENING" in line:
+                parts = line.split()
+                pid = parts[-1]
+                pids.append(pid)
+
+        if not pids:
+            print(f"Port {port} is free.")
+            return
+
+        for pid in pids:
+            try:
+                subprocess.run(["taskkill", "/PID", pid, "/F"], check=False)
+                print(f"Killed process {pid} using port {port}")
+            except Exception as e:
+                print(f"Error killing {pid}: {e}")
+
+
+
+def start_server(): 
+    system = platform.system()
+    print('[[[[[[[[[[]]]]]]]]]]',system)
+    if system == "Windows":
+        proc = subprocess.Popen([
+            "python", "-m", "waitress", "--listen=0.0.0.0:8050", "wsgi:server"
+        ])
+        msg = f"Waitress started (Windows) with PID {proc.pid}"
+    else: 
+        proc = subprocess.Popen([
             "python", "-m", "gunicorn.app.wsgiapp",
             "-w", "4",
             "-b", "0.0.0.0:8050",
             "wsgi:server",
             "-c", "gunicorn.conf.py"
         ])
-        return "Restart triggered!"
-    except Exception as e:
-        return f"Error restarting: {e}"
-    
+        msg = f"Gunicorn started (Linux/Unix) with PID {proc.pid}" 
+    return msg
+
+
+
+
 
 def async_restart():
-    restart_apps()
+    free_port()
+    start_server()
 
 def restart_appsx():
     try:
@@ -60,7 +117,7 @@ def restart_appsx():
     except Exception as e:
         return f"Error restarting: {e}"
 
-    
+     
 
 name='pinn'
 page_dir=f"/dsa-{name}"
@@ -261,6 +318,7 @@ def update_output(n_clicks, store_datas):
     status = html.H3("Completed!", style={'color': 'lightgreen', 'textAlign': 'center'})
 
     return status
+
 
 
 
