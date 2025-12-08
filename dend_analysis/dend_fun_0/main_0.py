@@ -511,14 +511,15 @@ class app_run_param:
                         is_open=False
                     ),
                 ]),
-                style={"marginBottom": "20px", "boxShadow": "0 2px 6px rgba(0,0,0,0.15)"}
+                style={"marginBottom": "0px", "boxShadow": "0 2px 6px rgba(0,0,0,0.15)"}
             ) 
             self.graph.append(
                 dbc.Col(
                     param[gval]['option'],
                     xs=12, sm=6, md=4, lg=3, 
                    #  width=3,
-                    style={'marginBottom': '20px', "width": "100%" },
+ 
+                    style={'marginBottom': '0px', "width": "100%" },
                 )
             )  
             # self.graph.append( 
@@ -545,22 +546,55 @@ class app_run_param:
                                     dbc.Col(
                                         dbc.Card(
                                             dbc.CardBody([
-                                                dbc.Button("Run", id="run-button", n_clicks=0, color="primary")
+                                                dbc.Button("Run", 
+                                                id="run-button", 
+                                                n_clicks=0, 
+                                                color="primary",
+                                               #  color="success",
+                                                className="w-1",)
                                             ]),
-                                            style={"margin": "7px", "padding": "7px"}
+                                            style={"margin": "0px", "padding": "0px"}
                                         ),
-                                        width="auto"
+                                        width="4", 
+                                        className="d-flex justify-content-center" 
                                     ),
                                     dbc.Col(
                                         dbc.Card(
                                             dbc.CardBody([
-                                                dbc.Button("Restart", id="restart-button", n_clicks=0, color="primary")
+                                                dbc.Button("Restart", 
+                                                id="restart-button", 
+                                                n_clicks=0,  
+                                                color="primary",
+                                               #  color="warning",
+                                                className="w-1",)
                                             ]),
-                                            style={"margin": "5px", "padding": "5px"}
+                                            style={"margin": "0px", "padding": "0px"}
                                         ),
-                                        width="auto"
+                                        width="4", 
+                                        className="d-flex justify-content-center" 
                                     ),
-                                ], justify="center", align="center"),
+                                    dbc.Col(
+                                        dbc.Card(
+                                            dbc.CardBody([
+                                                dbc.Button("Off", 
+                                                id="shutdown-button", 
+                                                n_clicks=0,
+                                                color="primary",
+                                               #   color="danger",
+                                                className="w-1",)
+                                            ]),
+                                            style={"margin": "0px", "padding": "0px" }
+                                        ),
+                                        width="4", 
+                                        className="d-flex justify-content-center" 
+                                    ),
+                                ], 
+                                justify="center",   # centers the columns horizontally
+                                align="center",     # centers vertically inside the row
+                                # className="g-0",    # removes gutter spacing between columns
+                                style={"marginTop": "20px"}
+
+                                ),
 
                                 # Destination input card 
                                 dbc.Col(
@@ -586,11 +620,12 @@ class app_run_param:
                                         style={"marginBottom": "20px", "boxShadow": "0 2px 6px rgba(0,0,0,0.15)"}
                                     ) ,
                                 xs=12, sm=6, md=4, lg=3,  
-                                style={'marginBottom': '20px', "width": "100%" },
+                                style={'marginBottom': '0px', "width": "100%" },
                                 ),
                                 # Parameter cards
                                 *self.graph
                             ],
+        className="g-0"  ,
                             width=4,
                             style={"padding": "10px", "borderRight": "1px solid #ccc"}
                         ),
