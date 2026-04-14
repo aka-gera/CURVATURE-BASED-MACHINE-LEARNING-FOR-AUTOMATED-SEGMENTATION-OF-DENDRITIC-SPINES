@@ -57,7 +57,7 @@ This will:
 
 Once the browser window opens:
 
-- Click on **DSA** in the top‑left corner.  
+- Click on **DSA** or/then **Prediction** in the top‑left corner.  
 - Drag one or multiple `.obj` meshes into the segmentation box.  
   - If you don’t provide meshes, two demo meshes included in the repository will be used.  
   - The parent directory of meshes is shown in the **“Add Destination”** box. Update this path if needed.  
