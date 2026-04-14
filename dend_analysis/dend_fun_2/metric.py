@@ -502,22 +502,82 @@ class center_curvature:
                  subsample_thre=subsample_thre, )
     
 
+ 
 
- 
-def get_kmean(dist_norm,n_clusters=4,kmean_max_iter=300):
-    pca_radius=np.array(dist_norm).reshape(-1,1)
- 
-    cluster1 = KMeans(n_clusters=n_clusters, max_iter=kmean_max_iter, n_init='auto')
+def get_kmean(dist_norm, n_clusters=4, kmean_max_iter=300):
+    pca_radius = np.array(dist_norm).reshape(-1, 1)
+
+    cluster1 = KMeans(
+        n_clusters=n_clusters,
+        max_iter=kmean_max_iter,
+        n_init='auto'
+    )
     cluster1.fit(pca_radius)
+
     y_pred = cluster1.labels_
-    pca_rad=[float(np.mean(pca_radius[:,0][y_pred==i])) for i in range(n_clusters)]
-    y_pred_1=np.argsort(pca_rad)
+    inertia = cluster1.inertia_    
+    pca_rad = [float(np.mean(pca_radius[:, 0][y_pred == i])) for i in range(n_clusters)]
+    y_pred_1 = np.argsort(pca_rad)
 
-    cluu_rad_ = np.zeros_like(y_pred)  
-    for ii,iip in enumerate(y_pred_1):
-        cluu_rad_[(y_pred==iip)  ]=ii
+    cluu_rad_ = np.zeros_like(y_pred)
+    for ii, iip in enumerate(y_pred_1):
+        cluu_rad_[y_pred == iip] = ii
 
-    return cluu_rad_
+    return cluu_rad_, inertia
+
+
+def get_kmean_mode(dist_norm, n_clusters=4, kmean_max_iter=300, n_runs=10):
+    best_labels = None
+    best_inertia = np.inf
+
+    for _ in range(n_runs):
+        labels, inertia = get_kmean(dist_norm, n_clusters, kmean_max_iter)
+        if inertia < best_inertia:
+            best_inertia = inertia
+            best_labels = labels
+
+    return best_labels
+
+
+from sklearn.metrics import silhouette_score
+import numpy as np
+
+def get_kmean_mode(dist_norm, n_clusters=4, kmean_max_iter=300, n_runs=10, tf_sihouette=False):
+    pca_radius = np.array(dist_norm).reshape(-1, 1)
+
+    best_score = -np.inf
+    best_labels = None
+
+    for _ in range(n_runs):
+        labels, inertia = get_kmean(dist_norm, n_clusters, kmean_max_iter)
+
+        # --- compute silhouette if requested ---
+        if tf_sihouette:
+            try:
+                sil = silhouette_score(pca_radius, labels)
+            except:
+                sil = -1.0
+        else:
+            sil = 0.0
+
+        # --- normalize metrics ---
+        # inertia is positive, so invert it
+        inertia_score = -inertia
+
+        # combine metrics
+        # silhouette dominates, inertia refines
+        score = sil + 0.001 * inertia_score
+
+        if score > best_score:
+            best_score = score
+            best_labels = labels
+
+    return best_labels
+
+
+
+
+
 
 
 def get_kmean_mean(dist_norm, n_clusters=4, kmean_max_iter=500):
