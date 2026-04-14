@@ -84,10 +84,10 @@ def get_dict_param(nam='meshes',
                     path_heads=None,
                     ):
     path_heads_show=path_heads_show if path_heads_show is not None else [ 
+                'dnn_GINN_SM00000_LOC_AUG',
                 f'cnn_3UNet3D3_5000_hpcc_crop',
                 f'cnn_VGG16_FCN3D_5000_hpcc_crop',
                 f'cnn_VoxNetSeg_5000_hpcc_crop', 
-                'dnn_GINN_SM00000_LOC_AUG',
                 'gcn_UNet_SM10000_LOC',
                 'cml_cML',
     ]
