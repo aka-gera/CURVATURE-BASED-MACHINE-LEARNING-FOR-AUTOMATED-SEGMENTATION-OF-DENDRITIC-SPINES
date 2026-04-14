@@ -91,9 +91,7 @@ def get_dict_param(nam='meshes',
                 'gcn_UNet_SM10000_LOC',
                 'cml_cML',
     ]
-    path_heads=path_heads if path_heads is not None else [    
-                'save',  
-                ] 
+    path_heads=path_heads if path_heads is not None else ['save',] 
 
 
     path_display = ['dest_shaft_path', 'dest_spine_path', ] 
