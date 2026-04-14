@@ -133,7 +133,7 @@ python -m  gunicorn -w 4 -b 0.0.0.0:8050 wsgi:server -c gunicorn.conf.py
 
 ## Navigating the Interface
 
-- On the right side of **DSA** (top corner), click on one of the following to visualize the results:
+- On the right side of **DSA** or/then **Prediction** (top corner), click on one of the following to visualize the results:
     - **GINN** — *Geometric-Informed Neural Network*  
     - **CNN** — *Convolutional Neural Network*  
     - **GCN** — *Graph Convolutional Neural Network*  
