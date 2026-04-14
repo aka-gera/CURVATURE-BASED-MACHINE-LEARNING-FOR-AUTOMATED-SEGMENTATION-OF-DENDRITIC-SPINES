@@ -21,8 +21,8 @@ from dend_fun_0.get_path import get_name,get_configs,get_path_train,get_data_mod
 from dend_fun_0.side_bar import  dnn_page
 
 file_path_parent=os.path.dirname(file_path_org)
-file_path_parent=os.path.join(file_path_parent,'meshes')
-
+file_path_parent=os.path.join(file_path_parent,'meshes','meshes')
+os.makedirs(file_path_parent, exist_ok=True) 
 import subprocess
 # def restart_apps(process="gunicorn"):
 #     try: 
@@ -72,12 +72,163 @@ def restart_apps(process="gunicorn"):
         return f"Error restarting: {e}"
 
 
-def algorithm_param(nam='meshes',n_step = 200,weight=3,size_threshold=100, ):
+
+
+
+def get_dict_param(nam='meshes',
+                    n_step = 20,
+                    weight=3.,
+                    size_threshold=100,
+                    kmean_n_run=50,
+                    path_heads_show=None,
+                    path_heads=None,
+                    ):
+    path_heads_show=path_heads_show if path_heads_show is not None else [ 
+                f'cnn_3UNet3D3_5000_hpcc_crop',
+                f'cnn_VGG16_FCN3D_5000_hpcc_crop',
+                f'cnn_VoxNetSeg_5000_hpcc_crop',  
+                'dnn_GINN_SM00000_AUG', 
+                'dnn_GINN_SM00000_LOC_AUG',
+                'gcn_UNet_SM10000_LOC',
+                'cml_cML',
+    ]
+    path_heads=path_heads if path_heads is not None else [    
+                'save',  
+                ] 
+
+
+    path_display = ['dest_shaft_path', 'dest_spine_path', ] 
+    path_display = ['dest_shaft_path', ]
  
+
+
+    # path_heads_show=path_heads_show if model_type in path_heads_show else path_heads_show +[model_type] 
+    path_heads = list(set(path_heads+path_heads_show))
+    dnn_modes=['DNN-0','DNN-1','DNN-2' , 'DNN-3',]
+    # if model_type not in path_heads:'DNN-5',
+    #     path_heads.append(model_type)
+    # if dnn_mode not in dnn_modes:
+    #     dnn_modes.append(dnn_mode)
+
+    path_list=['shaft_path','spine_path',  ]   
+    weig=sorted(list(set([0.001,0.05,0.1,0.5,0.81,1,2, 3,6,10,13,16,20]  )))
+    path_dirs=[f'dice_we_{wei}' for wei in weig] 
+    path_dirs_weig={key:val for key,val in zip(path_dirs,weig)}
+    weigg=[ 3,10] 
+
+    # for hh in ['iou', 'loss', 'auc']:
+    #     for wei in weigg:
+    #         key = f'{hh}_we_{wei}'
+    #         path_dirs.append(key)
+    #         path_dirs_weig[key] = wei
+
+    # path_dirs=[f'pa_we_{wei}' for wei in  sorted(list(set([0.2,.5,0.81,1,3,4,6,10,16] +[weight])))]+[weight]
+
+    path_display_dic={
+                        'path':path_dirs,
+                        'model_sufix':[],
+                        'path_head':[],
+                    } 
+    param_dic={
+        hh:{
+            kk:True for kk in ['get_pinn_features','get_wrap','get_scale',
+            'get_smooth','get_shaft_pred','get_dend_name','get_skeleton', ]
+        }
+        for hh in ['tf_restart','get_info','data']
+    } 
+
+    param_dic['data']['get_dend_name']=dict(
+                        dict_dend_path='current',
+                        drop_dic_name=None,)
+
+
+
+
+
+    
+
+
+
+    return dict(   
+        # dend_data = dend_data,  
+        # true_name = 'true_0', 
+        # dnn_mode = dnn_mode,
+        # model_type = model_type, 
+        # path_dir=path_dir,
+        # data_dir=data_dir, 
+        nam=nam,
+        n_step = n_step,
+        weight=weight,
+        size_threshold=size_threshold,
+        path_display = path_display, 
+        model_type_data=None,  
+        path_display_dic=path_display_dic,
+        path_heads_show=path_heads_show,
+        # path_shaft_dir=path_shaft_dir,
+        param_dic=param_dic,
+        kmean_n_run=kmean_n_run,
+        dnn_modes=dnn_modes,
+        path_dirs=path_dirs,
+        path_list=path_list,
+        path_heads=path_heads,
+        path_dirs_weig=path_dirs_weig,
+    )
+
+    
+
+
+
+
+
+def algorithm_param(nam='meshes',
+                    n_step = 200,
+                    weight=3.,
+                    size_threshold=100,
+                    path_heads=None, 
+                    dnn_modes=None,
+                    path_dirs=None,
+                    path_list=None,
+                    path_display=None,
+                    tf_restart=False,
+                    kmean_n_run=50,
+                    kmean_max_iter=600,
+                    param_dic=None,
+                    path_dir=None,
+                    data_dir=None,  
+                    model_type_data =None,
+                    path_display_dic=None,
+                    path_heads_show=None,
+                    path_shaft_dir=None,
+                    path_dirs_weig=None,
+                    # path_display_dic=None,
+                    ):
+    if param_dic is None: 
+        param_dic={
+            hh:{
+                kk:True for kk in ['get_pinn_features','get_wrap','get_scale','get_smooth','get_skeleton']
+            }
+            for hh in ['tf_restart','get_info']
+        }
+    if path_heads is None:
+        path_heads=['pinn', ]
+        path_heads=['pinn','rpinn','ML','pinn_new','unet3d']
+    if dnn_modes is None:
+        dnn_modes=['DNN-0','DNN-1','DNN-2' , 'DNN-3', 'DNN-5']
+    if path_list is None:
+        path_list=['shaft_path','spine_path',  ] 
+    if path_dirs is None:
+        path_dirs=['save',  ] 
+    if path_display is None:
+        path_display=['dest_shaft_path','dest_spine_path',]
+        path_display=['dest_spine_path_pre','dest_spine_path','dest_shaft_path']
+   
+    # print('[[[[[[[[[[[[---------------------------000--------]]]]]]]]]]]]')
+    # print(param_dic['data']['get_dend_name'])
+
+  
     smooth_tf=True
     smooth_tf=False
-    data_studied='train'
-    data_studied='test' 
+    data_studied='train'  
     
     data_studied='test' 
     skip_first_n=1
@@ -97,7 +248,7 @@ def algorithm_param(nam='meshes',n_step = 200,weight=3,size_threshold=100, ):
     line_num_points_shaft=200
     line_num_points_inter_shaft=150 if nam in tres else 80 
 
-    spline_smooth_shaft=.03
+    spline_smooth_shaft=1
     subdivision_thre=0 if nam in tres else 2
     zoom_thre=150 if nam in tres else 100
     skip_end_n=20 if nam in tres else 200
@@ -119,30 +270,27 @@ def algorithm_param(nam='meshes',n_step = 200,weight=3,size_threshold=100, ):
     skip_end_n=14
     subdivision_thre=2
  
-    path_heads=['pinn','rpinn','ML','pinn_old']
-    path_heads=['pinn', ]
-    dnn_modes=['DNN-1','DNN-2' , 'DNN-3']
 
 
 
-
-    path_display=['dest_spine_path_pre','dest_spine_path','dest_shaft_path']
-    path_display=['dest_shaft_path','dest_spine_path',]
     dict_mesh_to_skeleton_finder_mesh=dict( 
                 interval_voxel_resolution=[100 ], 
-                interval_target_number_of_triangles=[1], 
+                interval_target_number_of_triangles=[200000], 
                 tf_largest=False,
                 disp_infos=True, 
                 min_voxel_resolution=200,
                 min_target_number_of_triangles=1000,
-                tf_division=True,
+                tf_division=True, 
+                alpha_fraction=.8,
+                offset_fraction=0.800,
+                wrap_method='alpha_wrap',
                     )
 
     param_get_segments=dict(
                             thre_distance_min=1.75 ,
                             thre_distance_max=1.5,
                             thre_explained_variance_ratio=0.97,
-                            size_threshold=100, 
+                            size_threshold=size_threshold, 
                             tf_merge=False, 
 
     )
@@ -172,14 +320,14 @@ def algorithm_param(nam='meshes',n_step = 200,weight=3,size_threshold=100, ):
     weights=[[3,.81]] 
     
  
-    param_clean=[ 'all', 'result']+path_heads
+    param_clean=[ 'all', 'result']+path_heads_show
 
-    param_dropdown=['path_heads', 'dnn_modes']
-    param_dropdowni=['path_head', 'dnn_mode']
-    param_input=['Smooth','Resizing','Spine–Shaft Segm', 'Morphologic Param','model_shap','clean_path_dir',  ]
-    param_inputbv=[ 'intensity_all','iou','graph_center','dash_pages', 'cylinder_heatmap' ,'annotations',  'dendrite_pred',  ]
-    param_input_save=[ 'spines_segss_old','spines_segss_old_2', 'clean_path_dir','get_training', ]
-    param_list=['param_dropdown','param_input','param_all', 'param_list','param_dropdowni','param_inputbv' ]
+    param_dropdown=['path_heads', 'dnn_modes','path_dirs', ]
+    param_dropdowni=['path_head', 'dnn_mode','path_dir']
+    param_input=['Smooth','Resizing','Spine-Shaft Segm', 'Morphologic Param','model_shap','clean_path_dir', ]
+    param_inputbv=[ 'intensity_rhs','intensity_all','iou','roc','graph_center','dash_pages', 'cylinder_heatmap' ,'annotations',  'dendrite_pred' ,'rhs','skl','Skeleton',  ]
+    param_input_save=[ 'spines_segss_old','spines_segss_old_2', 'clean_path_dir','get_training','skl_shaft_pred']
+    param_list=['param_dropdown','param_input','param_all', 'param_list','param_dropdowni','param_inputbv','path_list', 'path_dirs_weig']
     param_all=[]
     param_all.extend(param_dropdown)
     param_all.extend(param_input)
@@ -187,7 +335,7 @@ def algorithm_param(nam='meshes',n_step = 200,weight=3,size_threshold=100, ):
     param_all.extend(param_input_save)
     param_all.extend(param_list)
     param_all.extend(param_dropdowni)
-    param_all.extend(param_clean)
+    param_all.extend(param_clean) 
 
     param={key:
                 {
@@ -199,24 +347,29 @@ def algorithm_param(nam='meshes',n_step = 200,weight=3,size_threshold=100, ):
             for key in param_all
             }
     param['param_list']['param']=param_list
-    param['path_heads']['param']=path_heads
+    param['path_heads']['param']=path_heads_show 
+    param['path_dirs']['param']=path_dirs
+    param['path_list']['param']=path_list
     param['param_dropdown']['param']=param_dropdown
     param['param_dropdowni']['param']=param_dropdowni
     param['param_input']['param']=param_input
     param['param_inputbv']['param']=param_inputbv
     param['param_all']['param']=param_all 
     param['dnn_modes']['param']=dnn_modes
-    param['path_head']['param']=path_heads[0]
+    param['path_head']['param']=path_heads_show[0]
     param['dnn_mode']['param']=dnn_modes[0] 
+    param['path_dir']['param']=path_dirs[0]
+    param['path_dirs_weig']['param']=path_dirs_weig
 
 
     
     param['Smooth']['param']=dict(
-                                get_data=True,
-                                n_error = 1,
-                                n_step = n_step,
-                                dt=1e-6,
-                                disp_time=500, )
+                                get_data=True, 
+                                n_step = n_step, 
+                                method=['willmore','taubin',],
+                                dt=1e-6, )
+    param['Smooth']['param_fix']=dict(  
+                                disp_time=500,  )
     param['Smooth']['tf']=tf_smooth=False#True 
 
     param['annotations']['tf']= False#True
@@ -234,6 +387,10 @@ def algorithm_param(nam='meshes',n_step = 200,weight=3,size_threshold=100, ):
     param['intensity_all']['tf']= False
 
 
+    param['intensity_rhs']['param_fix']=dict(   
+						radius_threshold=None, 
+                                        )
+    param['intensity_rhs']['tf']= False
 
     param['model_shap']['param_fix']=dict(  
                                     dend_names_ls=[0,1],
@@ -262,10 +419,25 @@ def algorithm_param(nam='meshes',n_step = 200,weight=3,size_threshold=100, ):
                                         l1_values = [0,   1e-6,   1e-4, 1e-2],
                                         l2_values = [0,   1e-6,   1e-4, 1e-2], 
                                         )
-    param['Spine–Shaft Segm']['param']=dict( weight=weight,
+    param['Spine-Shaft Segm']['param']=dict( 
                                       size_threshold=size_threshold,
                                     )   
-    param['Spine–Shaft Segm']['param_fix']=dict(
+    param['Skeleton']['param']=dict( weight=weight,
+                                        size_threshold=size_threshold,
+                                        path='entry',
+                                        wrap_part='shaft_wrap' , 
+                                        weights=weights, 
+                                        shaft_thre=0.9, 
+                                        smooth_tf=tf_smooth,
+                                        neck_lim=neck_lim,
+                                        dict_wrap=dict_wrap,
+                                        dict_mesh_to_skeleton_finder=dict_mesh_to_skeleton_finder_mesh, 
+                                        tf_skl_shaft_distance=tf_skl_shaft_distance,
+                                        tf_restart=tf_restart,
+
+                                    )   
+    param['Spine-Shaft Segm']['param_fix']=dict(
+                                        weight=weight,
                                         # train_spines=train_spines,
                                         # model_type=model_type,
                                         # # # 
@@ -282,15 +454,17 @@ def algorithm_param(nam='meshes',n_step = 200,weight=3,size_threshold=100, ):
 
 
     param['Resizing']['param']=dict(  
-                                        min_target_number_of_triangles_faction=600000,
-                                        target_number_of_triangles_faction=10000,
+                                        # min_target_number_of_triangles_faction=600000,
+                                        target_number_of_triangles_faction=200000,
                                                 )
     param['Resizing']['param_fix']=dict( 
                                         thre_target_number_of_triangles=thre_target_number_of_triangles,
                                         voxel_resolution=voxel_resolution,
                                         annotation_resized_train_tf=False, 
+                                        nam=nam,
                                                 )
 
+    param['skl_shaft_pred']['tf']= True
 
     param['spines_segss_old']['param_fix']=dict( 
                                         seg_dend='nfull', 
@@ -357,16 +531,24 @@ def algorithm_param(nam='meshes',n_step = 200,weight=3,size_threshold=100, ):
                                         voxel_resolution=voxel_resolution, 
                                         path_display=path_display,
                                         dict_mesh_to_skeleton_finder_mesh=dict_mesh_to_skeleton_finder_mesh,
+                                        kmean_n_run=kmean_n_run,
+                                        kmean_max_iter=kmean_max_iter,
+                                        param_dic=param_dic,
                             )
     param['dendrite_pred']['tf']=True 
     param['model_shap']['tf']=False
 
-    param['Spine–Shaft Segm']['tf']=True 
+    param['Spine-Shaft Segm']['tf']=True 
     param['spines_segss_old']['tf']=False
+    param['skl_shaft_pred']['tf']=False
     param['spines_segss_old_2']['tf']= False
     param['Morphologic Param']['tf']= True
     param['Resizing']['tf']=False
+    param['skl']['tf']=True
+    param['Skeleton']['tf']=True
+    param['rhs']['tf']=True
     param['iou']['tf']=True
+    param['roc']['tf']=True
     param['graph_center']['tf']=True
     param['cylinder_heatmap']['tf']=True
     param['dash_pages']['tf']=True 
@@ -392,6 +574,17 @@ box_style = {
     'background-color': 'black',
     'color': 'black'
 } 
+dropdown_style = {
+    'width': '85%',
+    'padding': '3px',
+    'font-size': '20px',
+    'text-align-last': 'center',
+    # 'margin': 'auto', 
+    'marginLeft': 'auto',
+    # 'background-color': 'black',
+    'color': 'black',
+    # 'height': '10px',
+} 
 dropdown_options_style = {'color': 'white', 'background-color': 'gray'} 
 
 
@@ -408,13 +601,16 @@ class app_run_param:
         self.graph=[]
         self.path_head=param['path_head']['param']
         self.dnn_mode=param['dnn_mode']['param']
-        self.path_heads=param['path_heads']['param']
+        self.path_dir=param['path_dir']['param'] 
+        self.path_heads=param['path_heads']['param'] 
         self.dnn_modes=param['dnn_modes']['param']
+        self.path_dirs=param['path_dirs']['param'] 
+        self.path_list=param['path_list']['param']
         self.Input_id.append('upload-data')
 
  
         for gval,gvali in zip(param['param_dropdown']['param'],param['param_dropdowni']['param']):
-            print(gval,param[gval]['param'] )
+            # print(gval,param[gval]['param'] )
             dropdown_option = [
                 {'label': val, 'value': val, 'style': dropdown_options_style}
                 for   val in param[gval]['param'] 
@@ -491,16 +687,38 @@ class app_run_param:
                             dbc.Row([
                                 dbc.Col(html.Label(k, style={'textAlign': 'right'}), width=3),
                                 dbc.Col(
-                                    dbc.Checkbox(
-                                        id=f"param_{gval}_{k}",
-                                        value=v,
-                                        label="Enabled"
-                                    ) if isinstance(v, bool) else dcc.Input(
-                                        id=f"param_{gval}_{k}",
-                                        type="text",
-                                        value=v,
-                                        style={'width': '75px', 'marginLeft': 'auto'}  # smaller + pushed right
-                                    ),
+                                    # dbc.Checkbox(
+                                    #     id=f"param_{gval}_{k}",
+                                    #     value=v,
+                                    #     label="Enabled"
+                                    # ) if isinstance(v, bool) else dcc.Input(
+                                    #     id=f"param_{gval}_{k}",
+                                    #     type="text",
+                                    #     value=v,
+                                    #     style={'width': '75px', 'marginLeft': 'auto'}  
+                                    # ),
+                                    # comp = (
+                                        dbc.Checkbox(
+                                                    id=f"param_{gval}_{k}", 
+                                                    value=v, 
+                                                    label="Enabled",
+                                        ) if isinstance(v, bool) else
+                                        dcc.Input(
+                                            id=f"param_{gval}_{k}",
+                                            type="text",
+                                            value=v,
+                                            style={'width': '75px', 'marginLeft': 'auto'}
+                                        ) if isinstance(v, int) or isinstance(v, float) else
+                                        dcc.Dropdown(
+                                            options=[{'label': val, 'value': val, 'style': dropdown_options_style} for val in list(v)],
+                                            id=f"param_{gval}_{k}",
+                                            value=list(v)[0],
+                                            placeholder=f"Select {gval} {k}",
+                                            style=dropdown_style,
+
+                                        ),
+                                    # )
+
                                     width=9,
                                     className="text-end"  # right-align inside column
                                 )
@@ -544,7 +762,7 @@ class app_run_param:
                                 # Buttons row
                                 dbc.Row([
                                     dbc.Col(
-                                        dbc.Card(
+                                        # dbc.Card(
                                             dbc.CardBody([
                                                 dbc.Button("Run", 
                                                 id="run-button", 
@@ -553,13 +771,28 @@ class app_run_param:
                                                #  color="success",
                                                 className="w-1",)
                                             ]),
-                                            style={"margin": "0px", "padding": "0px"}
-                                        ),
-                                        width="4", 
+                                        #     style={"margin": "0px", "padding": "0px"}
+                                        # ),
+                                        width="3", 
                                         className="d-flex justify-content-center" 
                                     ),
                                     dbc.Col(
-                                        dbc.Card(
+                                        # dbc.Card(
+                                            dbc.CardBody([
+                                                dbc.Button("Reset", 
+                                                id="reset-button", 
+                                                n_clicks=0,  
+                                                color="primary",
+                                               #  color="warning",
+                                                className="w-1",)
+                                            ]),
+                                        #     style={"margin": "0px", "padding": "0px"}
+                                        # ),
+                                        width="3", 
+                                        className="d-flex justify-content-center" 
+                                    ),
+                                    dbc.Col(
+                                        # dbc.Card(
                                             dbc.CardBody([
                                                 dbc.Button("Restart", 
                                                 id="restart-button", 
@@ -568,13 +801,13 @@ class app_run_param:
                                                #  color="warning",
                                                 className="w-1",)
                                             ]),
-                                            style={"margin": "0px", "padding": "0px"}
-                                        ),
-                                        width="4", 
+                                            # style={"margin": "0px", "padding": "0px"}
+                                        # ),
+                                        width="3", 
                                         className="d-flex justify-content-center" 
                                     ),
                                     dbc.Col(
-                                        dbc.Card(
+                                        # dbc.Card(
                                             dbc.CardBody([
                                                 dbc.Button("Off", 
                                                 id="shutdown-button", 
@@ -583,9 +816,9 @@ class app_run_param:
                                                #   color="danger",
                                                 className="w-1",)
                                             ]),
-                                            style={"margin": "0px", "padding": "0px" }
-                                        ),
-                                        width="4", 
+                                        #     style={"margin": "0px", "padding": "0px" }
+                                        # ),
+                                        width="3", 
                                         className="d-flex justify-content-center" 
                                     ),
                                 ], 
@@ -785,7 +1018,7 @@ class app_run_param:
                     new_param[gval]['param'][k] = bool(val)
                 else:
                     try: 
-                        new_param[gval]['param'][k] = int(val)
+                        new_param[gval]['param'][k] = float(val)
                     except (ValueError, TypeError):
                         try:
                             new_param[gval]['param'][k] = float(val)
@@ -812,7 +1045,7 @@ class app_run_param:
                     new_param[gval]['param'][k] = bool(val)
                 else:
                     try: 
-                        new_param[gval]['param'][k] = int(val)
+                        new_param[gval]['param'][k] = float(val)
                     except (ValueError, TypeError):
                         try:
                             new_param[gval]['param'][k] = float(val)
@@ -848,7 +1081,7 @@ class app_run_param:
                     new_param[gval]['param'][k] = bool(val)
                 else:
                     try: 
-                        new_param[gval]['param'][k] = int(val)
+                        new_param[gval]['param'][k] = float(val)
                     except (ValueError, TypeError):
                         try:
                             new_param[gval]['param'][k] = float(val)
@@ -867,7 +1100,7 @@ class app_run_param:
                     new_param[gval]['param'][k] = bool(val)
                 else:
                     try: 
-                        new_param[gval]['param'][k] = int(val)
+                        new_param[gval]['param'][k] = float(val)
                     except (ValueError, TypeError):
                         try:
                             new_param[gval]['param'][k] = float(val)
@@ -896,219 +1129,383 @@ class algorithm:
                 param,  
                 true_name='true_0',
                 pre_portion='spine', 
+                path_heads_true=['true',]
                 ): 
-        self.dnn_modes=param['dnn_modes']['param']
         self.path_heads=param['path_heads']['param'] 
+        self.path_dirs=param['path_dirs']['param'] 
+        self.dnn_modes=param['dnn_modes']['param']
+        self.path_list=param['path_list']['param'] 
         self.param=param  
         self.true_keys=[true_name]
         self.pre_portion=pre_portion
+        pre_portion=self.pre_portion
+        path_list=self.path_list 
+        self.path_heads_true=path_heads_true
 
-    def text( self,   
-            dend_data=None,  
+
+
+
+
+
+
+
+
+    def pre_test_train( self, 
+            path_heads_show,
+            model_sufix_show, 
+            path_dirs_show,
+            dend_data=None,   
+            train_test='test',
             true_name='true_0', 
-            dnn_mode='mode0',
+            dnn_mode='mode0', 
             model_type='pinn' , 
+            path_dir='save',
             path_display=None, 
+            size_threshold=None,
+            path_display_dic=None, 
+            path_shaft_dir=None,
+            model_type_data=None,
+            data_dir=None,
+
             ): 
         pre_portion=self.pre_portion
-        modes={val:{} for val in self.path_heads}
+        path_list=self.path_list
+        model_type_data=model_type_data if model_type_data is not None else model_type
+        path_heads_show_data=[model_type_data]
+        modes={
+                val:{  
+                        name:{
+                                dirs:{} 
+                                for dirs in path_dirs_show
+                            } 
+                            for name in model_sufix_show+['mode0']+["DNN-4"] 
+                        }  
+                    for val in path_heads_show
+                }
+        configs=get_configs() 
+
+        dmode = get_data_mode(pre_portion=pre_portion,path_list=path_list) 
+        for val in path_heads_show:   
+                ids,name,dirs=0,'mode0',path_dirs_show[0]
+                data_dir_tmp=data_dir if data_dir is not None else dirs
+                data_mode=dmode.test_pre(pre_portion=pre_portion,
+                                            data_head=model_type_data,
+                                            dest_head=val,
+                                            seg_dend=dirs,
+                                            data_dir=data_dir_tmp,
+                                            dest_dir=dirs,
+                                            )
+                modes[val][name][dirs]=[dmode.mode_id] 
+                for dirs in path_dirs_show:
+                    data_dir_tmp=data_dir if data_dir is not None else dirs
+                    for ids, name in enumerate(model_sufix_show):
+                        # print(f"Finished {name}, dnn_modes={self.dnn_modes}")
+                        cfg=configs[name]
+                        cfg["data_sufix"]=cfg["dest_sufix"]=None
+                        data_mode = dmode.test_opt( 
+                                                pre_portion=pre_portion, 
+                                                train_test=train_test,
+                                                data_head=model_type_data,
+                                                dest_head=val,
+                                                seg_dend=dirs,
+                                                data_dir=data_dir_tmp,
+                                                dest_dir=dirs,
+                                                **cfg
+                                            ) 
+                        modes[val][name][dirs]=[dmode.mode_id]  
+        model_sufix_dic={mm:{} for mm in ['model_sufix_dic','path','path_heads_show','path_heads_dic','model_sufix_dic_inverse','model_sufix_show','path_dirs_show','drop_dic']}
+        model_sufix_dic['model_sufix_show']=[data_mode[modes[model_type][dnn_mode][path_dir][0]]['model_sufix'][0] for dnn_mode in  model_sufix_show]
+        model_sufix_dic['model_sufix_dic'] ={data_mode[modes[model_type][dnn_mode][path_dir][0]]['model_sufix'][0] :dnn_mode for dnn_mode in  model_sufix_show}
+        model_sufix_dic['model_sufix_dic']['save']='save'
+        model_sufix_dic['model_sufix_dic_inverse'] = {v: k for k, v in model_sufix_dic['model_sufix_dic'].items()} 
+        # print('[[[[[[[[[[lllllloooooolllll]]]]]]]]]]',model_sufix_show,model_sufix_dic['model_sufix_dic'],model_sufix_dic['model_sufix_show'])
+ 
         configs=get_configs()
-        dmode = get_data_mode(pre_portion=pre_portion) 
-        for val in self.path_heads:
-            ids,name=0,'mode0'  
-            data_mode=dmode.test_pre(pre_portion=pre_portion,
-                                        data_head=val,
-                                        dest_head=val, )
-            modes[val][name]=[dmode.mode_id] 
-            print(f"Finished {name}, mode_id={dmode.mode_id}") 
+        fcgs={}
+        for ids, name in enumerate(model_sufix_show):
+            # print(f"Finished {name}, dnn_modes={model_sufix_show}")
+            cfg=configs[name]
+            # print('[[[]]]',name,cfg)
+            cfg["data_sufix"],cfg["dest_sufix"]=model_sufix_dic['model_sufix_dic_inverse'][cfg["data_sufix"]],model_sufix_dic['model_sufix_dic_inverse'][cfg["dest_sufix"]]
+            cfg["data_dir"]=path_dir #if path_shaft_dir is None else path_shaft_dir.get('data_dir',path_dir)
+            cfg["dest_dir"]=path_dir #if path_shaft_dir is None else path_shaft_dir.get('data_dir',path_dir)
+            fcgs[name]=cfg
+ 
 
-            for ids, name in enumerate(self.dnn_modes):
-                print(f"Finished {name}, mode_id={self.dnn_modes}")
-                cfg=configs[name]
-                data_mode = dmode.test_opt(
-                                        data_mode=data_mode,
-                                        pre_portion=pre_portion,
-                                        train_test='test',
-                                        data_head=val,
-                                        dest_head=val, 
-                                        **cfg
-                                    )
-                modes[val][name]=[dmode.mode_id] 
-                print(f"Finished {name}, mode_id={dmode.mode_id}")
-        self.modes,self.data_mode,self.dmode=modes,data_mode,dmode
+        dmode = get_data_mode(pre_portion=pre_portion,path_list=path_list) 
+        for val in path_heads_show:
+            # for valdata in path_heads_show_data: 
+                ids,name,dirs=0,'mode0',path_dirs_show[0]
+                data_dir_tmp=data_dir if data_dir is not None else dirs
+                data_mode=dmode.test_pre(pre_portion=pre_portion,
+                                            data_head=model_type_data,
+                                            dest_head=val,
+                                            seg_dend=dirs, 
+                                            data_dir=data_dir_tmp,)
+                modes[val][name][dirs]=[dmode.mode_id] 
+                # print(f"Finished {name}, mode_id={dmode.mode_id}") 
 
+                for dirs in path_dirs_show: 
+                    for ids, name in enumerate(model_sufix_show):
+                        fcgs[name]['data_dir']=data_dir if data_dir is not None else dirs 
+                        # cfg=configs[name]
+                        data_mode = dmode.test_opt(
+                                                data_mode=data_mode,
+                                                pre_portion=pre_portion,
+                                                train_test='test',
+                                                data_head=model_type_data,
+                                                dest_head=val, 
+                                                seg_dend=dirs, 
+                                                **fcgs[name]
+                                            )
+                        modes[val][name][dirs]=[dmode.mode_id] 
+                        # modes[val][dmode.mode_id]=name
+                        # print(f"Finished {name}, mode_id={dmode.mode_id}")
+        self.modes,self.data_mode,self.dmode=modes,data_mode,dmode 
         path_heads=self.path_heads 
         param=self.param 
-        print(f"heeeds===== {model_type}, mo---de_id={dnn_mode}")
-        mode_ids=modes[model_type][dnn_mode]
-        # dend_data= gdas.part(nam)      
-        self.obj_org_path_dict =obj_org_path_dict=dend_data['obj_org_path_dict']
-        true_keys=self.true_keys 
+        # mode_ids=modes[model_type][dnn_mode][path_dir] 
+        # true_keys=self.true_keys 
+        # print(f"heeeds===== {model_type}, mo---de_id={dnn_mode}")
+        # dend_data= gdas.part(nam)
         path_display = path_display if path_display is not None else param['dendrite_pred']['param']['path_display']
-
-        dend_path_inits=dend_data['dend_path_inits']
-        dend_names=dend_data['dend_names'] 
-        weights=dend_data['weights']
-
-        # model_sufix_dic={data_mode[modes[model_type][dnn_mode]]['model_sufix'][0]:dnn_mode for dnn_mode in  self.dnn_modes}
  
-        model_sufix_dic={data_mode[modes[model_type][dnn_mode][0]]['model_sufix'][0] :dnn_mode for dnn_mode in  self.dnn_modes}
-        model_sufix_dic['save']='save'
-            # model_sufix_dic={data_mode[modes[model_type][dnn_mode][0]]['model_sufix'][0] :dnn_mode for dnn_mode in  self.dnn_modes}
-        print(f"heeeds===== model_sufix_dic, mo---de_id={model_sufix_dic}")
-        # weightss=[np.array([nn,.81]) for nn,mm in zip(np.arange(a,b,(b-a)/n),np.arange(a,b,(b-a)/n))] 
 
-        # if model_type == 'pinn_old':
-        #     weights=[np.array([nn,.81]) for nn,mm in zip(np.arange(a,b,(b-a)/n),np.arange(a,b,(b-a)/n))]  
-        #     path_dend_fun='dend_fun_3' 
-        # else:
-        #     weights=None
+        # model_sufix_dic={data_mode[modes[model_type][dnn_mode]]['model_sufix'][0]:dnn_mode for dnn_mode in  model_sufix_show}
+        model_sufix_dic['path_dirs_dic']={ke:va for ke,va in zip(path_dirs_show,path_dirs_show)}  
+        model_sufix_dic['path_dir']=path_dir
+        result =[part if len(part.split('_'))<=1 else '_'.join(part.split('_')[1:]) for part in path_heads]
+        path_headss=path_heads+['save']
+        result=result+['default'] 
+        model_sufix_dic['path_heads_show']=path_heads_show  
+        model_sufix_dic['path_dirs_show']=path_dirs_show
+
+        model_sufix_dic['path_heads_dic']={ke:va for ke,va in zip(path_headss,result)}  
+        model_sufix_dic['head_navbar']={
+                                        "DSA": "dsa",
+                                        "DNN": "dnn",
+                                        # "DNN v.0": "pinn",
+                                        "3D CNN": "cnn",
+                                        "GCN": 'gcn',
+                                        "class ML":'cml',
+                                    }
+        self.model_sufix_dic=model_sufix_dic
+        self.obj_org_path_dict = dend_data['obj_org_path_dict']
+
+
+
+ 
+
+ 
+
+
+
+
+
+    def test( self,   
+            dend_data=None,  
+            true_name='true_0', 
+            dnn_mode='mode0', 
+            model_type='pinn' , 
+            model_type_data=None,
+            path_dir='save',
+            path_display=None, 
+            size_threshold=None,
+            path_display_dic=None,
+            path_shaft_dir=None, 
+            path_heads_show=None, 
+            model_sufix_show=None, 
+            path_dirs_show=None,
+            train_spines=False,
+            data_dir=None,
+            drop_dic=None,
+            n_step = None,
+            weight=None,
+            dnn_modes=None,
+            path_dirs=None, 
+            param_dic=None,
+            kmean_n_run=None,
+            path_list=None,
+            path_heads=None,
+            nam=None,
+            path_dirs_weig=None,
+            ): 
+        param=self.param
+        path_heads_show=path_heads_show if path_heads_show is not None else self.path_heads
+        model_sufix_show=model_sufix_show if model_sufix_show is not None else self.dnn_modes 
+        path_dirs_show=path_dirs_show if path_dirs_show is not None else self.path_dirs
+        model_type_data=model_type_data if model_type_data is not None else model_type
+        self.data(   
+                exit_name=None,
+                entry_name=None, 
+                train_test='test',
+                dend_data=dend_data,  
+                true_name=true_name, 
+                dnn_mode=dnn_mode, 
+                model_type=model_type, 
+                model_type_data=model_type_data, 
+                path_dir=path_dir,
+                path_display=path_display, 
+                size_threshold=size_threshold,
+                path_display_dic=path_display_dic, 
+                path_shaft_dir=path_shaft_dir, 
+                path_heads_show=path_heads_show,
+                model_sufix_show=model_sufix_show, 
+                path_dirs_show=path_dirs_show, 
+                data_dir=data_dir,
+                drop_dic=drop_dic, 
+                ) 
+        dend_data_tmp=self.dend_data_tmp
+        pre_portion=self.pre_portion
+        path_list=self.path_list
+        data_mode=self.data_mode
+        modes,data_mode,dmode=self.modes,self.data_mode,self.dmode
+        self.model_sufix_dic['drop_dic']=drop_dic
+        model_sufix_dic=self.model_sufix_dic
+        mode_ids=modes[model_type][dnn_mode][path_dir] 
+        true_keys=self.true_keys 
+        path_heads=self.path_heads  
+        obj_org_path_dict =self.obj_org_path_dict  
     
         time_start = time.time()
+ 
 
-        if param['Resizing']['tf']: 
-            parr=dict(
-                    get_data=True,
-                    n_error = 1,
-                    n_step = 0,
-                    dt=1e-6,
-                    disp_time=500, )
-        else:
-            parr=param['Smooth']['param']
-
-        get_smh=get_smooth(  
-                            dend_data=dend_data, 
-                            file_path_org=file_path_org,
-                            obj_org_path=obj_org_path_dict[true_name],
-                            true_keys=true_keys,
-                            obj_org_path_dict=obj_org_path_dict,
-                                model_sufix_dic=model_sufix_dic, 
-                            **parr )
-
-        if param['Smooth']['tf']:
-            get_smh.get_smooth_all() 
-        else:
-            get_smh.get_load_smooth_all()
-
-         
+        model_type11=model_type #if path_shaft_dir is None else path_shaft_dir.get('model_type',model_type)
+        path_dir11=path_dir  #if path_shaft_dir is None else   path_shaft_dir.get('path_dir',path_dir)
         path_head_clean_=[False for item in range(len(mode_ids))]
         path_head_clean_=[True if item <1 else False for item in range(len(mode_ids))]
         for ixi,mode_id in enumerate(mode_ids):#data_mode.keys(): #
             nhh=data_mode[mode_id]['model_sufix'] 
             model_sufix=data_mode[mode_id]['model_sufix'][0] 
+
+
+            mode_dnn1 =data_mode[mode_id]['model_init']
+            mode_dnn1=mode_dnn1 # if mode_dnn1 is not None else (mode_dnn1 if path_shaft_dir is None else path_shaft_dir.get('model_sufix',mode_dnn1))
+            mode_dnn11=model_sufix_dic['model_sufix_dic_inverse'].get(mode_dnn1,None)
+            path_shaft_dir=None if mode_dnn11 is None else f'{model_type11}_{mode_dnn11}_{path_dir11}'
+
+
             dend_cla=dendrite_pred(   
-                                dend_data=dend_data, 
+                                dend_data=dend_data_tmp, 
                                 model_sufix=model_sufix,
                                 data_mode=data_mode[mode_id],   
                                 pinn_dir_data_all=dmode.pinn_dir_data_all,
                                 model_sufix_all=dmode.model_sufix_all, 
                                 path_heads= path_heads,
-                                model_type=model_type,
+                                model_type=model_type, 
                                 obj_org_path_dict=obj_org_path_dict ,
                                 true_keys=true_keys,
                                 model_sufix_dic=model_sufix_dic,
+                                path_display_dic=path_display_dic,
+                                # path_display=path_display,
                                 **param['dendrite_pred']['param']
                                 ) 
  
             dend_cla.get_model_opt_name(model_sufix=model_sufix,
                                         model_type=model_type)  
-            train_spines=False if mode_id in ['pre_non_full','pre_non_full_he'] else True
-            get_process_=True if mode_id in ['pre_non_full','pre_non_full_he'] else False 
-
+            
  
             if param['clean_path_dir']['tf']:
                 path_head_clean=param['clean_path_dir']['param']['path_clean'] 
-                if path_head_clean_[ixi]:
-                    dend_cla.clean_path_dir(path_head_clean=path_head_clean)
-                get_smh.get_load_smooth_all()
-
-
-            if param['Resizing']['tf']: 
-                dend_cla.get_annotation_resized(
-                                                **param['Resizing']['param']
-                                                )  
-                dend_data['dend_path_inits']=[f'{nam}_resized'  for nam in dend_data['dend_path_inits']]
-                pathd= dend_data['obj_org_path']
-                dend_data['obj_org_path']=f'{pathd}_resized' 
-                dend_data['obj_org_path_dict']['true_0']= dend_data['obj_org_path']  
-                get_smh=get_smooth(  
-                                    dend_data=dend_data, 
-                                    file_path_org=file_path_org,
-                                    obj_org_path=obj_org_path_dict[true_name],
-                                    true_keys=true_keys,
-                                    obj_org_path_dict=obj_org_path_dict, 
-                                    model_sufix_dic=model_sufix_dic,
-                                    **parr )
-
-                if param['Smooth']['tf']:
-                    get_smh.get_smooth_all() 
-                else:
-                    get_smh.get_load_smooth_all()
-
-
-                dend_cla=dendrite_pred(   
-                                    dend_data=dend_data, 
-                                    model_sufix=model_sufix,
-                                    data_mode=data_mode[mode_id],   
-                                    pinn_dir_data_all=dmode.pinn_dir_data_all,
-                                    model_sufix_all=dmode.model_sufix_all, 
-                                    path_heads= path_heads,
-                                    model_type=model_type,
-                                    obj_org_path_dict=obj_org_path_dict ,
-                                    model_sufix_dic=model_sufix_dic,
-                                    true_keys=true_keys,
-                                    **param['dendrite_pred']['param']
-                                    ) 
-                dend_cla.get_model_opt_name(model_sufix=model_sufix,
-                                            model_type=model_type)  
-
-                if param['clean_path_dir']['tf']:
-                    path_head_clean=param['clean_path_dir']['param']['path_clean']
-                    print('=======[[[[[[[[========]]]]]]]]',path_head_clean)
-                    if path_head_clean_[ixi]:
-                        dend_cla.clean_path_dir(path_head_clean=path_head_clean)
-                    get_smh.get_load_smooth_all()
-
-            if param['annotations']['tf']:
-                dend_cla.get_annotations()
-                
-            if param['intensity_all']['tf']:
-                dend_cla.get_intensity_all(**param['intensity_all']['param'])
+                print('[[[[[[path_head_clean]]]]]]',path_head_clean) 
     
-         
-            if param['model_shap']['tf']:
-                dend_cla.model_shap( 
-                                    train_spines=train_spines,
-                                    **param['model_shap']['param']
-                                    ) 
+            size_threshold=param['dendrite_pred']['param']['size_threshold'] 
 
-            
-            if param['Spine–Shaft Segm']['tf']:  
-                dend_cla.get_shaft_pred(
+            if param['rhs']['tf']: 
+                dend_cla.get_rhs(
+                                        param_dend_name=param['dendrite_pred']['param']['param_dic']['data']['get_dend_name'],
+                                        **param['Skeleton']['param'])
+         
+
+            if param['Spine-Shaft Segm']['tf']:   
+                if (dnn_mode== 'DNN-2'):
+                        dend_cla.get_skl_shaft_pred(
+                                                # weights=weights,
+                                                path_shaft_dir=path_shaft_dir,
+                                                train_spines=train_spines,
+                                                model_type=model_type,
+                                            **param['Spine-Shaft Segm']['param']
+                                            ) 
+                if model_type.startswith(('vol','cnn')):
+                    dend_cla.get_shaft_pred_cnn(
+                                            # weights=weights,
+                                            train_spines=train_spines,
+                                            model_type=model_type,
+                                        **param['Spine-Shaft Segm']['param']
+                                        )   
+                elif model_type.startswith(('gcn',)): 
+                    dend_cla.get_shaft_pred_gcn(
+                                            # weights=weights, 
+                                            train_spines=train_spines,
+                                            model_type=model_type,
+                                        **param['Spine-Shaft Segm']['param']
+                                        )   
+                elif model_type.startswith(('dnn',)): 
+                    dend_cla.get_shaft_pred_dnn(
+                                            # weights=weights,
+                                            train_spines=train_spines,
+                                            model_type=model_type,
+                                        **param['Spine-Shaft Segm']['param']
+                                        )   
+                elif model_type.startswith(('pnet',)): 
+                    dend_cla.get_shaft_pred_pnet(
+                                            # weights=weights,
+                                            train_spines=train_spines,
+                                            model_type=model_type,
+                                        **param['Spine-Shaft Segm']['param']
+                                        )   
+                elif model_type.startswith(('cml','cML', 'ML')): 
+                    dend_cla.get_shaft_pred_cml(
+                                            # weights=weights,
+                                            train_spines=train_spines,
+                                            model_type=model_type,
+                                        **param['Spine-Shaft Segm']['param']
+                                        )   
+                elif model_type.startswith(('pinn',)): 
+                    dend_cla.get_shaft_pred_PINN(
+                                            # weights=weights,
+                                            train_spines=train_spines,
+                                            model_type=model_type,
+                                        **param['Spine-Shaft Segm']['param']
+                                        )   
+                else:
+                    dend_cla.get_shaft_pred(
+                                            # weights=weights,
+                                            train_spines=train_spines,
+                                            model_type=model_type,
+                                            **param['Spine-Shaft Segm']['param']
+                                        )    
+                dend_cla.get_shaft_process(
                                         # weights=weights,
                                         train_spines=train_spines,
                                         model_type=model_type,
-                                    **param['Spine–Shaft Segm']['param']
-                                    )   
+                                        **param['Spine-Shaft Segm']['param']
+                                    ) 
 
-
+            if param['skl_shaft_pred']['tf']: 
+                dend_cla.get_skl_shaft_pred(
+                                        # weights=weights,
+                                        path_shaft_dir=path_shaft_dir,
+                                        train_spines=train_spines,
+                                        model_type=model_type,
+                                        **param['Spine-Shaft Segm']['param']
+                                    ) 
+            
+            if param['model_shap']['tf']:
+                dend_cla.model_shap( 
+                                        train_spines=train_spines,
+                                        model_type=model_type,
+                                    **param['Spine-Shaft Segm']['param'],
+                                    # **param['model_shap']['param']
+                                    ) 
             dom='sp_nfull' 
             if param['spines_segss_old']['tf']:
                 dend_cla.get_spines_segss_old(  
                                             dest_path=data_mode[mode_id][dom]['path'],
                                             **param['spines_segss_old']['param']
                                             )
-    
-            dom='sp_nfull' 
-            if param['spines_segss_old_2']['tf']:
-                dend_cla.get_spines_segss_old_2(  
-                                            dest_path=data_mode[mode_id][dom]['path'],
-                                            **param['spines_segss_old_2']['param']
-                                            )
-    
-        
-
-            dom='hn_nfull'
+     
+         
             if param['Morphologic Param']['tf']: 
                 for pdisplay in path_display:
                     dend_cla.get_head_neck_segss(  
@@ -1118,6 +1515,12 @@ class algorithm:
 
             if param['iou']['tf']:
                 dend_cla.get_iou()  
+
+            if param['roc']['tf']:
+                dend_cla.get_roc()  
+
+
+
 
             if param['graph_center']['tf']:
                 dend_cla.get_graph_center() 
@@ -1138,7 +1541,7 @@ class algorithm:
             minutes, seconds = divmod(rem, 60) 
             print(f'Prediction completed in {int(hours)}h {int(minutes)}m {seconds:.2f}s')  
 
-        return ''
+        return dend_cla
                 
  
 
@@ -1148,62 +1551,58 @@ class algorithm:
     def train( self,  
             dend_data=None,  
             true_name='true_0', 
+            path_dir='save',
             dnn_mode='mode0',
             model_type='pinn' , 
-            path_display=None, 
+            entry_names=[],
+            path_display=None,  
+            path_list=None,
+            path_display_dic=None,
+            path_shaft_dir=None, 
+            path_heads_show=None,
+            model_sufix_show=None, 
+            path_dirs_show=None,
+            size_threshold=None,
+            model_type_data=None, 
+            data_dir=None,
             ): 
-        pre_portion=self.pre_portion  
-
-        configs=get_configs()
-        dmode = get_data_mode(pre_portion=pre_portion)
-        data_mode = dmode.train_pre(pre_portion=pre_portion)
-        modes={}
-        ids,name=0,'mode0'  
-        data_mode=dmode.train_pre(pre_portion=pre_portion,  )
-        modes[name]=[dmode.mode_id ]
-        print(f"Finished {name}, mode_id={dmode.mode_id}") 
-        for ids in range(1,len(list(configs.items()))):
-            name=f'mode{ids}'
-            cfg=configs[name]
-            data_mode = dmode.train_opt(
-                                    data_mode=data_mode,
-                                    pre_portion=pre_portion,
-                                    train_test='train',
-                                    **cfg
-                                )
-            modes[name]=[dmode.mode_id]
-            print(f"Finished {name}, mode_id={dmode.mode_id}" )
-
- 
-        self.modes,self.data_mode,self.dmode=modes,data_mode,dmode
-
-        path_heads=self.path_heads 
-        param=self.param  
-        mode_ids=modes[dnn_mode]
-       
-        self.obj_org_path_dict =obj_org_path_dict=dend_data['obj_org_path_dict']
+        param=self.param
+        path_heads_show=path_heads_show if path_heads_show is not None else self.path_heads_true
+        model_sufix_show=model_sufix_show if model_sufix_show is not None else self.dnn_modes 
+        path_dirs_show=path_dirs_show if path_dirs_show is not None else self.path_dirs
+        model_type_data=model_type_data if model_type_data is not None else model_type
+        # model_type='true'
+        self.pre_test_train(   
+            train_test='train',
+            dend_data=dend_data,  
+            true_name=true_name, 
+            path_heads_show=path_heads_show,
+            model_sufix_show=model_sufix_show, 
+            path_dirs_show=path_dirs_show,
+            dnn_mode=dnn_mode, 
+            model_type=model_type, 
+            model_type_data=model_type_data, 
+            path_dir=path_dir,
+            path_display=path_display, 
+            size_threshold=size_threshold,
+            path_display_dic=path_display_dic, 
+            path_shaft_dir=path_shaft_dir, 
+            data_dir=data_dir,
+            )
+        pre_portion=self.pre_portion
+        path_list=self.path_list
+        param=self.param
+        data_mode=self.data_mode
+        modes,data_mode,dmode=self.modes,self.data_mode,self.dmode
+        model_sufix_dic=self.model_sufix_dic
+        mode_ids=modes[model_type][dnn_mode][path_dir]
         true_keys=self.true_keys 
-        path_display = path_display if path_display is not None else param['dendrite_pred']['param']['path_display']
+        path_heads=self.path_heads  
+        obj_org_path_dict =self.obj_org_path_dict
+
  
-         
-  
-    
         time_start = time.time()
-
-        get_smh=get_smooth(  
-                            dend_data=dend_data, 
-                            file_path_org=file_path_org,
-                            obj_org_path=obj_org_path_dict[true_name],
-                            true_keys=true_keys,
-                            obj_org_path_dict=obj_org_path_dict, 
-                            **param['Smooth']['param'] )
-
-        if param['Smooth']['tf']:
-            get_smh.get_smooth_all() 
-        else:
-            get_smh.get_load_smooth_all()
-
-
+  
         for ixi,mode_id in enumerate(mode_ids):#data_mode.keys(): #
             nhh=data_mode[mode_id]['model_sufix'] 
             model_sufix=data_mode[mode_id]['model_sufix'][0] 
@@ -1217,48 +1616,72 @@ class algorithm:
                                 model_type=model_type,
                                 obj_org_path_dict=obj_org_path_dict ,
                                 true_keys=true_keys,
+                                model_sufix_dic=model_sufix_dic,
                                 **param['dendrite_pred']['param']
                                 ) 
+ 
             dend_cla.get_model_opt_name(model_sufix=model_sufix,
-                                        model_type=model_type)  
-            if param['clean_path_dir']['tf']:
-                path_head_clean_=[True if item <1 else False for item in range(len(mode_ids))] 
-                path_head_clean=param['clean_path_dir']['param']['path_head_clean'] 
-                if path_head_clean_[ixi]:
-                    dend_cla.clean_path_dir(path_head_clean=path_head_clean)
+                                        model_type=model_type)   
 
-            if param['annotations']['tf']:
-                dend_cla.get_annotations()
-                
-            if param['intensity_all']['tf']:
-                dend_cla.get_intensity_all(**param['intensity_all']['param'])
-    
-
-            dend_cla.get_intensity_rhs()
- 
- 
+   
+            size_threshold=param['dendrite_pred']['param']['size_threshold'] 
             train_spines=data_mode[mode_id]['train_spines']
             if param['get_training']['tf']:
-                if (model_type in ['cML']) or model_type.startswith('ML'): 
-                    dend_cla.train_model_spine_ML(     
+                if model_type.startswith(('cml','ML','cML')): 
+                    dend_cla.train_model_spine_cml(     
                                             model_sufix=model_sufix, 
                                             train_spines=train_spines, 
                                             model_type=model_type,  
                                             num_sub_nodes=20000,
+                                            entry_names=entry_names,
                                             **param['get_training']['param']
                                             )
-                elif model_type in ['pinn_adv','rpinn_adv','pinn_resized_adv']:
-                    dend_cla.train_model_spine_adv(    
+                elif model_type.startswith(('gcn',)):
+                    dend_cla.train_model_spine_gcn(
                                             train_spines=train_spines, 
                                             model_type=model_type, 
                                             model_sufix=model_sufix, 
+                                            entry_names=entry_names,
+                                            **param['get_training']['param'],
+                                            )  
+                elif model_type.startswith(('dnn',)):
+                    dend_cla.train_model_spine_dnn(
+                                            train_spines=train_spines, 
+                                            model_type=model_type, 
+                                            model_sufix=model_sufix, 
+                                            entry_names=entry_names,
                                             **param['get_training']['param'],
                                             ) 
+                elif model_type.startswith(('pinn',)):
+                    dend_cla.train_model_spine_PINN(
+                                            train_spines=train_spines, 
+                                            model_type=model_type, 
+                                            model_sufix=model_sufix, 
+                                            entry_names=entry_names,
+                                            **param['get_training']['param'],
+                                            )  
+                elif model_type.startswith(('pnet',)): 
+                    dend_cla.train_model_spine_pnet(
+                                            train_spines=train_spines, 
+                                            model_type=model_type, 
+                                            model_sufix=model_sufix, 
+                                            entry_names=entry_names,
+                                            **param['get_training']['param'],
+                                            )  
+                elif model_type.startswith(('vol',"fastfcn3d","unet3d",'cnn')):
+                    dend_cla.train_model_spine_cnn(
+                                            train_spines=train_spines, 
+                                            model_type=model_type, 
+                                            model_sufix=model_sufix, 
+                                            entry_names=entry_names,
+                                            **param['get_training']['param'],
+                                            )  
                 else:
                     dend_cla.train_model_spine(
                                             train_spines=train_spines, 
                                             model_type=model_type, 
                                             model_sufix=model_sufix, 
+                                            entry_names=entry_names,
                                             **param['get_training']['param'],
                                             ) 
 
@@ -1273,6 +1696,212 @@ class algorithm:
 
 
 
+
+    def data( self,  
+            dend_data=None,  
+            true_name='true_0', 
+            path_dir='save',
+            dnn_mode='mode0',
+            model_type='pinn' , 
+            entry_names=[],
+            path_display=None,  
+            path_list=None,
+            path_display_dic=None,
+            path_shaft_dir=None, 
+            path_heads_show=None,
+            model_sufix_show=None, 
+            path_dirs_show=None,
+            size_threshold=None,
+            exit_name=None,
+            entry_name=None,
+            train_test='test',
+            model_type_data=None,
+            data_dir=None,
+            drop_dic=None,
+            ): 
+        param=self.param
+        path_heads_show=path_heads_show if path_heads_show is not None else self.path_heads_true
+        model_sufix_show=model_sufix_show if model_sufix_show is not None else self.dnn_modes 
+        path_dirs_show=path_dirs_show if path_dirs_show is not None else self.path_dirs
+        # model_type='true'
+        self.pre_test_train(   
+            train_test=train_test,
+            dend_data=dend_data,  
+            true_name=true_name, 
+            path_heads_show=path_heads_show,
+            model_sufix_show=model_sufix_show, 
+            path_dirs_show=path_dirs_show,
+            dnn_mode=dnn_mode, 
+            model_type=model_type, 
+            path_dir=path_dir,
+            path_display=path_display, 
+            size_threshold=size_threshold,
+            path_display_dic=path_display_dic, 
+            path_shaft_dir=path_shaft_dir,  
+            data_dir=data_dir,
+            )
+        pre_portion=self.pre_portion
+        path_list=self.path_list
+        data_mode=self.data_mode
+        modes,data_mode,dmode=self.modes,self.data_mode,self.dmode
+        self.model_sufix_dic['drop_dic']=drop_dic
+        model_sufix_dic=self.model_sufix_dic
+        # print('[[[[[[[[[[[[[[-----]]]]]]]]]]]]]]',dnn_mode,modes[model_type].keys())
+        mode_ids=modes[model_type][dnn_mode][path_dir] 
+        true_keys=self.true_keys 
+        path_heads=self.path_heads  
+        obj_org_path_dict =self.obj_org_path_dict
+        from copy import deepcopy
+
+
+        path_head_clean_=[False for item in range(len(mode_ids))]
+        path_head_clean_=[True if item <1 else False for item in range(len(mode_ids))]
+        for ixi,mode_id in enumerate(mode_ids):#data_mode.keys(): # 
+            model_sufix=data_mode[mode_id]['model_sufix'][0] 
+            dend_cla=dendrite_pred(   
+                                dend_data=dend_data, 
+                                model_sufix=model_sufix,
+                                data_mode=data_mode[mode_id],   
+                                pinn_dir_data_all=dmode.pinn_dir_data_all,
+                                model_sufix_all=dmode.model_sufix_all, 
+                                path_heads= path_heads,
+                                model_type=model_type,
+                                obj_org_path_dict=obj_org_path_dict ,
+                                true_keys=true_keys,
+                                model_sufix_dic=model_sufix_dic,
+                                **param['dendrite_pred']['param']
+                                ) 
+ 
+            dend_cla.get_model_opt_name(model_sufix=model_sufix,
+                                        model_type=model_type)   
+
+
+            time_start = time.time()
+            # if param['rhs']['tf']: 
+            #     dend_cla.get_rhs( 
+            #                     entry_name=exit_name,
+            #                     exit_name =exit_name, 
+            #                     **param['Skeleton']['param'],
+            #         )
+
+            if param['Resizing']['tf']: 
+                parr=dict(
+                        get_data=True,
+                        n_error = 1,
+                        n_step = 0,
+                        dt=1e-6,
+                        disp_time=500, )
+            else:
+                parr=param['Smooth']['param']
+            save_entry_exit={nn:[] for nn in ['entry','exit','old_path']}
+            save_entry_exit['entry'].append(entry_name)
+            save_entry_exit['exit'].append(exit_name)
+            save_entry_exit['old_path'].append(entry_name)
+            if param['Resizing']['tf']: 
+                sze=param['Resizing']['param']['target_number_of_triangles_faction']
+                exit_name=f'resize_{sze}' if entry_name is None else f'{entry_name}_resize_{sze}'
+                dend_cla.get_resize(entry_names=[entry_name],
+                                    exit_names=[exit_name],
+                                    target_number_of_triangles_faction=sze,  
+                                    )
+                entry_name=exit_name
+                save_entry_exit['entry'].append(entry_name)
+                save_entry_exit['exit'].append(exit_name)
+                save_entry_exit['old_path'].append(entry_name)
+
+            if param['Smooth']['tf']:
+                exit_name='smooth'  if entry_name is None else f'{entry_name}_smooth'
+                dend_cla.get_smooth( 
+                                entry_name=entry_name,
+                                exit_name=exit_name,
+                                # dt=1e-6, 
+                                # n_step = 100,
+                                **param['Smooth']['param'] 
+                                )
+                entry_name=exit_name
+                save_entry_exit['entry'].append(entry_name)
+                save_entry_exit['exit'].append(exit_name)
+                save_entry_exit['old_path'].append(entry_name,)
+            for nn in ['entry','exit']:
+                if len(save_entry_exit[nn])==0:
+                    save_entry_exit[nn].append(None) 
+                    param['dendrite_pred']['param']['param_dic']['data']['get_dend_name']['old_path']='current'
+                save_entry_exit['old_path'].append('entry')
+
+
+
+            if param['Resizing']['tf']: 
+                # param['dendrite_pred']['param']['param_dic']['data']['get_dend_name']['dict_dend_path']=dict(dict_dend_path='old',
+                #                                 drop_dic_name=save_entry_exit['exit'][-1])
+                param['dendrite_pred']['param']['param_dic']['data']['get_dend_name']['dict_dend_path']= 'old'
+                param['dendrite_pred']['param']['param_dic']['data']['get_dend_name']['drop_dic_name']= save_entry_exit['exit'][-1]
+                param['dendrite_pred']['param']['param_dic']['data']['get_dend_name']['old_path']='current'
+            mmnn=param['Skeleton']['param']['path']
+            pathhh=f'{mmnn}'
+            for entry_name,exit_name,old_path in zip(save_entry_exit['entry'],save_entry_exit['exit'],save_entry_exit['old_path']):
+                for paath in ['entry','old']:
+                    param['Skeleton']['param']['path']=paath
+                    # if entry_name == 'smooth':'old',
+                    if param['Skeleton']['tf']: 
+                        # print('[[[[[[[--------------skl------------]]]]]]]',paath,entry_name,exit_name )
+                        # print('[[[[[[[--------------skl------------]]]]]]]',param['dendrite_pred']['param']['param_dic']['data']['get_dend_name'] )
+                        param_dend_name=deepcopy(param['dendrite_pred']['param']['param_dic']['data']['get_dend_name'])
+                        param_dend_name['drop_dic_name']=None
+                        param_dend_name['nam_gen']=None
+                        # print('[[[[[[[--------------skl------------]]]]]]]',param_dend_name )
+
+                        dict_wrap=param['Skeleton']['param']['dict_wrap']
+                        dend_cla.get_wrap(wrap_part='shaft', 
+                                        alpha_fraction=1,
+                                        offset_fraction=.7,
+                                        entry_name=entry_name,
+                                        exit_name=exit_name,
+                                        dict_wrap=dict_wrap,
+                                        old_path=old_path,
+                                        param_dend_name=param_dend_name,
+                                        ) 
+                        param['Skeleton']['param']['wrap_part']=None
+                        param['Skeleton']['param']['tf_restart']=True
+                        dend_cla.get_skeleton(
+                                        entry_name=entry_name,
+                                        exit_name =exit_name,
+                                        old_path=old_path,
+                                        # wrap_part='shaft_wrap' , 
+                                        **param['Skeleton']['param'], 
+                        )
+                        param['Skeleton']['param']['wrap_part']='shaft_wrap'
+                        param['Skeleton']['param']['tf_restart']=True
+                        dend_cla.get_skeleton(
+                                        entry_name=entry_name,
+                                        exit_name =exit_name,
+                                        old_path=old_path,
+                                        # wrap_part='shaft_wrap' , 
+                                        **param['Skeleton']['param'], 
+                        )
+                    if param['rhs']['tf']: 
+                        dend_cla.get_rhs( 
+                                        entry_name=exit_name,
+                                        exit_name =exit_name,
+                                        old_path=old_path,
+                                        param_dend_name=param_dend_name,
+                                        **param['Skeleton']['param'],
+                            )
+            param['Skeleton']['param']['path']=pathhh
+
+ 
+                
+            dend_data_tmp=deepcopy(dend_data)     
+            mmm=dend_data['obj_org_path']
+            dend_data_tmp['obj_org_path']=dend_data['obj_org_path'] if exit_name is None else f'{mmm}_{exit_name}'  
+            dend_data_tmp['dend_path_inits']=dend_data['dend_path_inits'] if exit_name is None else [f'{nam}_{exit_name}'  for nam in dend_data['dend_path_inits']] 
+
+
+            mytime0 = time.time() - time_start 
+            hours, rem = divmod(mytime0, 3600)
+            minutes, seconds = divmod(rem, 60) 
+            print(f'Training completed in {int(hours)}h {int(minutes)}m {seconds:.2f}s')  
+        self.dend_data_tmp=dend_data_tmp
+    
  
 
 class get_data:

@@ -361,12 +361,11 @@ def get_kmean(dist_norm,n_clusters=4,kmean_max_iter=300):
 
 
 
-
 import pickle
 from dend_fun_0.get_path import get_name,get_param
 
 
-class pinn_data_init(get_name,get_param):
+class pinn_data(get_name,get_param):
     def __init__(self,file_path,
                 #  txt_save_file,
                 shaft_path,
@@ -386,7 +385,12 @@ class pinn_data_init(get_name,get_param):
                 line_num_points_inter_shaft=300, 
                 spline_smooth_shaft=1, 
                 thre_target_number_of_triangles=None,
-                voxel_resolution=None,
+                voxel_resolution=None, 
+                file_path_feat=None,
+                dict_mesh_to_skeleton_finder_mesh=None,
+                        kmean_n_run=60,
+                        kmean_max_iter=600,
+                        param_dic=None,
                         ):
         get_name.__init__(self)  
         get_param.__init__(self,
@@ -410,6 +414,11 @@ class pinn_data_init(get_name,get_param):
         self.path_train=path_train
         self.path_file=path_file
         self.pre_portion=pre_portion
+        self.file_path_feat=file_path_feat 
+        self.dict_mesh_to_skeleton_finder_mesh=dict_mesh_to_skeleton_finder_mesh 
+        self.kmean_n_run=kmean_n_run
+        self.kmean_max_iter=kmean_max_iter
+        self.param_dic=param_dic
         pass
  
     def get_intensity_head_neck(self, 
@@ -421,6 +430,7 @@ class pinn_data_init(get_name,get_param):
 						radius_threshold=None, 
 						disp_infos=None,
 						size_threshold=None,
+                        dend_path_true_final=None,
 						):
         disp_infos=disp_infos or self.disp_infos
         file_path  = file_path or self.file_path
@@ -430,6 +440,7 @@ class pinn_data_init(get_name,get_param):
         radius_threshold = radius_threshold or self.radius_threshold
         size_threshold=size_threshold or self.size_threshold
         dend_first_name=dend_first_name or self.dend_first_name
+        dend_path_true_final=dend_path_true_final or self.dend_path_true_final
         if disp_infos:
             print(f"get_intensity_head_neck: {file_path}")  
         vertices_00 = np.loadtxt(os.path.join(file_path, self.txt_vertices_1), dtype=float)
@@ -451,8 +462,8 @@ class pinn_data_init(get_name,get_param):
             spine_index_all.extend(spine_index) 
         intensity_1hot[:,1:2][spine_index_all]=1 
         intensity_1hot[:,0:1][list(set(np.arange(vertices_00.shape[0]))-set(spine_index_all))]=1
-        np.savetxt(os.path.join(self.file_path_feat,'intensity_shaft_spine.txt'), intensity, fmt='%d')
-        np.savetxt(os.path.join(self.file_path_feat,'intensity_1hot_shaft_spine.txt'), intensity_1hot, fmt='%d')
+        np.savetxt(os.path.join(dend_path_true_final,'intensity_shaft_spine.txt'), intensity, fmt='%d')
+        np.savetxt(os.path.join(dend_path_true_final,'intensity_1hot_shaft_spine.txt'), intensity_1hot, fmt='%d')
  
 
 
@@ -580,8 +591,12 @@ class pinn_data_init(get_name,get_param):
     def get_pinn_rhs(self,
                         pre_portion,
 						file_path=None, 
+                        file_path_feat=None,
+                        dend_path_true_final=None,
                         radius_threshold=.03): 
         file_path = file_path or self.file_path 
+        file_path_feat=file_path_feat or self.file_path_feat
+        dend_path_true_final=dend_path_true_final or self.dend_path_true_final
  
         if os.path.exists(os.path.join(file_path, self.txt_vertices_0)):
             vertices_0  = np.loadtxt(os.path.join(file_path, self.txt_vertices_0), dtype=float)
@@ -589,11 +604,11 @@ class pinn_data_init(get_name,get_param):
             self.vertices_0=vertices_0
  
         if pre_portion=='head_neck': 
-            shaft_path_tmp=os.path.join(self.file_path_feat,'intensity_1hot_shaft_neck_head.txt')
+            shaft_path_tmp=os.path.join(dend_path_true_final,'intensity_1hot_shaft_neck_head.txt')
             if not os.path.exists(shaft_path_tmp):
                 self.get_intensity_head_neck(radius_threshold=radius_threshold) 
-        elif pre_portion=='spine': 
-            shaft_path_tmp=os.path.join(self.file_path_feat,'intensity_1hot_shaft_spine.txt')
+        elif pre_portion=='spine':  
+            shaft_path_tmp=os.path.join(dend_path_true_final,'intensity_1hot_shaft_spine.txt')
             if not os.path.exists(shaft_path_tmp):
                 self.get_intensity_head_neck(radius_threshold=radius_threshold)
 
@@ -604,6 +619,7 @@ class pinn_data_init(get_name,get_param):
 
     def get_pinn_data(self,
 						file_path=None,
+                        file_path_feat=None,
 						shaft_path=None,
                         spine_path=None,
 						weight_positive=.5,
@@ -612,13 +628,16 @@ class pinn_data_init(get_name,get_param):
                         head_neck=False,
 						shaft_path_init=None,
                         spine_path_init=None, 
-                        pre_portion=None,):
+                        pre_portion=None,
+                        dend_path_true_final=None,):
         pre_portion=pre_portion or self.pre_portion
         file_path = file_path or self.file_path
         shaft_path=shaft_path or self.shaft_path
         spine_path=spine_path or self.spine_path 
         thre_gauss=thre_gauss or self.thre_gauss
         thre_mean=thre_mean or self.thre_mean   
+        file_path_feat = file_path_feat or self.file_path_feat
+        dend_path_true_final = dend_path_true_final or self.dend_path_true_final
         vertices_path=os.path.join(file_path, self.txt_vertices_1)
         if not os.path.exists(vertices_path):
             raise FileNotFoundError(f"File {self.txt_vertices_1} not found in {file_path}.")
@@ -627,11 +646,11 @@ class pinn_data_init(get_name,get_param):
             self.vertices_0=  np.loadtxt(os.path.join(file_path, self.txt_vertices_0), dtype=float)
  
         if pre_portion=='head_neck': 
-            shaft_path_tmp=os.path.join(self.file_path_feat,'intensity_1hot_shaft_neck_head.txt')
+            shaft_path_tmp=os.path.join(dend_path_true_final,'intensity_1hot_shaft_neck_head.txt')
             if not os.path.exists(shaft_path_tmp):
                 self.get_intensity_head_neck(radius_threshold=.03) 
         elif pre_portion=='spine': 
-            shaft_path_tmp=os.path.join(self.file_path_feat,'intensity_1hot_shaft_spine.txt')
+            shaft_path_tmp=os.path.join(dend_path_true_final,'intensity_1hot_shaft_spine.txt')
             if not os.path.exists(shaft_path_tmp):
                 self.get_intensity_head_neck(radius_threshold=.03)
         self.rhs_shaft=np.loadtxt(shaft_path_tmp,dtype=int)  
@@ -651,20 +670,24 @@ class pinn_data_init(get_name,get_param):
         spine_path=spine_path or self.spine_path 
         disp_infos=disp_infos or self.disp_infos
 
-        self.vertices_00=vertices_00 = np.loadtxt(os.path.join(file_path, self.txt_vertices_1), dtype=float)
+        # self.vertices_00=vertices_00 = np.loadtxt(os.path.join(file_path, self.txt_vertices_0), dtype=float)
         if os.path.exists(os.path.join(file_path, self.txt_vertices_0)):
             vertices_0 = np.loadtxt(os.path.join(file_path, self.txt_vertices_0), dtype=float) 
         else:
             print("No smoothed mesh detected. Using the inital data")
-            vertices_0=vertices_00
+            # vertices_0=vertices_00
         faces = np.loadtxt(os.path.join(file_path, self.txt_faces), dtype=int) 
         if not os.path.exists(os.path.join(file_path_feat, self.txt_mean_curv_smooth)):
-            self.save_pinn_data()
+            self.save_pinn_data(
+                        file_path=file_path,
+                        file_path_feat=file_path_feat,)
         self.mean_curv=mean_curv  =np.loadtxt(os.path.join(file_path_feat, self.txt_mean_curv_smooth), dtype=float)
         self.gauss_curv=gauss_curv=np.loadtxt(os.path.join(file_path_feat, self.txt_gauss_curv_smooth), dtype=float)   
 
         if not os.path.exists(os.path.join(file_path_feat, self.txt_skl_distance)):
-            self.save_pinn_data()
+            self.save_pinn_data(
+                        file_path=file_path,
+                        file_path_feat=file_path_feat,)
             self.skl_distance=np.loadtxt(os.path.join(file_path_feat, self.txt_skl_distance), dtype=float)   
 
 
@@ -689,6 +712,5 @@ class pinn_data_init(get_name,get_param):
             self.lab_dend =  label_cluster(dend=self.dend,disp=disp_infos,)
         self.cclu=cluster_class(faces_neighbor_index=vertex_neighbor)
 
- 
  
   

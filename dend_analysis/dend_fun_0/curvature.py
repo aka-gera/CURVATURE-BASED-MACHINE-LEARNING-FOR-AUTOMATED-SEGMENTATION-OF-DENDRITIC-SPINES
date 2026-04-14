@@ -523,7 +523,7 @@ class part:
 
 
 class saves:
-    def __init__(self,n_step,n_error,dt=1) -> None:
+    def __init__(self,n_step:int,n_error:int,dt=1) -> None:
         self.dt = dt
         self.n_step = n_step
         self.n_error = n_error
@@ -683,7 +683,7 @@ class simulation:
                     mesh.export(smooth_path ) 
                     np.savetxt(os.path.join(save_file,f'volume.txt'), Xsave.volume[:i,:], fmt='%f')  
                     np.savetxt(os.path.join(save_file,f'energy.txt'), Xsave.energy[:i,:], fmt='%f')   
-                    np.savetxt(os.path.join(save_file,f'areas.txt'), Xsave.areas[:i,:], fmt='%f')
+                    np.savetxt(os.path.join(save_file,f'areas.txt'),  Xsave.areas[:i,:],  fmt='%f')
 
 
 

@@ -182,10 +182,11 @@ class mapping_skl():
 
 
 class mapping_skl():
-    def __init__(self,vertices,skeleton_points,skl_index ):
-        self.vertices=vertices 
-        # tree = KDTree( skeleton_points) 
-        # _,  skl_index = tree.query(vertices)  
+    def __init__(self,vertices,skeleton_points,skl_index=None):
+        self.vertices=vertices
+        if skl_index is None:
+            tree = KDTree( skeleton_points) 
+            _,  skl_index = tree.query(vertices)  
         self.mappk={} 
         for fb,vf in zip(skl_index,vertices): 
             fbv=tuple(skeleton_points[fb])
@@ -204,6 +205,45 @@ class mapping_skl():
             else:
                 print(f"Missing mapping for {fbv}")
         return np.array(vertices_mapped)
+
+
+class mapping_skl_all:
+    def __init__(self,vertices,skl_vertices,skl_index=None):
+        self.vertices=vertices
+        if skl_index is None:
+            tree = KDTree( skl_vertices) 
+            skl_index = tree.query(vertices)[1].flatten() 
+        huu={val:kk for kk,val in enumerate(skl_index)}
+        vals,inv=np.unique(skl_index,return_inverse=True)
+        self.mappk_init = {v: np.where(inv == i)[0].tolist() for i, v in enumerate(vals)}
+        self.mappk=self.mappk_init.copy()
+
+        treev = KDTree( vertices) 
+        skl_index_ver = treev.query(skl_vertices)[1].flatten()
+        gt=[huu[ii] for ii in skl_index[skl_index_ver]]
+
+        skl_index_remain=list(set(np.arange(len(skl_vertices)))-set(vals)) 
+        skl_index_val = KDTree( skl_vertices[vals]).query(skl_vertices[skl_index_remain])[1].flatten() 
+        for va,vaa in zip(skl_index_val,skl_index_remain):
+            # self.mappk[vaa]=self.mappk_init[vals[va]]
+            self.mappk[vaa]=[gt[vaa]]
+
+        self.point_map={tuple(val):ii for ii,val in enumerate(skl_vertices)}
+
+    def inv_vertices_index(self, skl_vertices):
+        idx=[self.point_map[tuple(ii)] for ii in skl_vertices]
+        vertices_mapped = []
+        for fb in idx: 
+            values = self.mappk[fb]
+            if values is not None:
+                vertices_mapped.extend(values)
+            else:
+                print(f"Missing mapping for {fb}")
+        return np.array(vertices_mapped)
+
+    def inv_vertices(self,skl_vertices):
+        self.vertices_index=self.inv_vertices_index(skl_vertices)
+        return self.vertices[self.vertices_index]
 
 
 

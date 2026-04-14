@@ -14,26 +14,31 @@ from dend_fun_0.help_pinn_data_fun import get_cluster_length_using_center_curve
 
 import dend_fun_0.density as den
 
-def get_scatter_center(self,spine_path,shaft_vertices_center_path,save_data=True):
+def get_scatter_center(self,spine_path,shaft_vertices_center_path,vertices_00,save_data=True):
     paath=os.path.join(spine_path,self.txt_spine_count)
     if not os.path.exists(paath):
         return 
     count= loadtxt_count(os.path.join(spine_path,self.txt_spine_count))
     mmm=count.ndim
     count=count if mmm==2 else count.reshape(-1,1)
-    vertices_center_shaft=np.loadtxt(os.path.join(shaft_vertices_center_path, self.txt_shaft_vertices_center),ndmin=2)
+    # vertices_center_shaft=np.loadtxt(os.path.join(shaft_vertices_center_path, self.txt_shaft_vertices_center),ndmin=2)
+    vertices_center_shaft=np.loadtxt(os.path.join(shaft_vertices_center_path, self.txt_skl_shaft_vertices),ndmin=2)
     vertices_center_shaft=np.atleast_2d(vertices_center_shaft) 
+    shaft_vcv_vertices_center=np.loadtxt(os.path.join(shaft_vertices_center_path, self.txt_shaft_vcv_vertices_center),ndmin=2)
+    shaft_vcv_vertices_center=np.atleast_2d(shaft_vcv_vertices_center) 
 
     scatter_spine = {}
     scatter_spine[0]=[]
-    scatter_spine[0].append(hf.plotly_scatter(points=self.vertices_00, color='purple', size=3.3, name='dendrite',opacity=0.5))
+    scatter_spine[0].append(hf.plotly_scatter(points= vertices_00, color='purple', size=3.3, name='dendrite',opacity=0.5))
 
     vertices_spine=np.loadtxt( os.path.join(shaft_vertices_center_path, f'shaft_index.txt'),dtype=int )
     scatter_spine[0].append(hf.plotly_scatter(points=vertices_center_shaft, color='red', size=3.3, name='shaft skl'))
+    scatter_spine[0].append(hf.plotly_scatter(points=shaft_vcv_vertices_center, color='blue', size=5.3, name='shaft vcv'))
 
     scatter_spine[1]=[]
     scatter_spine[1].append(hf.plotly_scatter(points=vertices_center_shaft, color='red', size=3.3, name='shaft skl'))
-    scatter_spine[1].append(hf.plotly_scatter(points=self.vertices_00[vertices_spine], color='purple', size=3.3, opacity=0.2, name='shaft',  ))
+    scatter_spine[1].append(hf.plotly_scatter(points=shaft_vcv_vertices_center, color='blue', size=5.3, name='shaft vcv'))
+    scatter_spine[1].append(hf.plotly_scatter(points= vertices_00[vertices_spine], color='purple', size=3.3, opacity=0.2, name='shaft',  ))
     xco=0
     for i in range(count.shape[0]): 
         ii=count[i,0]
@@ -53,7 +58,7 @@ def get_scatter_center(self,spine_path,shaft_vertices_center_path,save_data=True
                 scatter_spine[0].append(vercent)
 
         vertices_spine=np.loadtxt( os.path.join(spine_path, f'spine_index_{name}.txt'),dtype=int )  
-        scatter_spine[key].append(hf.plotly_scatter(points=self.vertices_00[vertices_spine], color=clor[ixi], size=2, opacity=0.5, name=f'spn_{name}',  )) 
+        scatter_spine[key].append(hf.plotly_scatter(points= vertices_00[vertices_spine], color=clor[ixi], size=2, opacity=0.5, name=f'spn_{name}',  )) 
 
     return  scatter_spine
 
@@ -95,29 +100,33 @@ def get_iou_graph(self,spine_path,mp=None ,save_data=True):
 
 
 class graph_iou:
-    def __init__(self,pid,path_file,path_train,center_path):
+    def __init__(self,pid,spine_path,true_path,shaft_vertices_center_path):
         pid.get_dend_data()   
-        self.path_file=path_file
+        # self.path_file=path_file
+        # self.path_train=path_train
+        # self.center_path=center_path   
         self.pid=pid
-        self.path_train=path_train
-        self.center_path=center_path   
+        self.spine_path=spine_path
+        self.true_path=true_path
+        self.shaft_vertices_center_path=shaft_vertices_center_path
 
 
     def scatter_center(self): 
-        spine_path=self.path_file[self.path_train[self.center_path]]    
-        shaft_vertices_center_path=self.path_file[self.path_train['data_shaft_path']]   
-        scatter_spine=get_scatter_center(self.pid, spine_path,shaft_vertices_center_path) 
-        with open(os.path.join(spine_path,'plot_data_center_curv.pkl'), 'wb') as f:
-            pickle.dump(scatter_spine, f)  
+        spine_path=self.spine_path   
+        shaft_vertices_center_path=self.shaft_vertices_center_path
+        if os.path.exists(os.path.join(shaft_vertices_center_path, self.pid.txt_shaft_vertices )): 
+            scatter_spine=get_scatter_center(self.pid, spine_path,shaft_vertices_center_path) 
+            with open(os.path.join(spine_path,'plot_data_center_curv.pkl'), 'wb') as f:
+                pickle.dump(scatter_spine, f)  
 
 
     def iou_graph(self,iou_thre=0.2):
-        spine_path=self.path_file[self.path_train['dest_appr_iou']]
+        spine_path=self.spine_path
         mp_path=os.path.join( spine_path,self.pid.pkl_mp)
         if not os.path.exists(mp_path): 
             iou_tr=iou_train(
-                            path_true=self.path_file[self.path_train['data_true_iou']],
-                            path_appr=self.path_file[self.path_train['dest_appr_iou']],
+                            path_true=self.true_path,
+                            path_appr=self.spine_path,
                             iou_thre=iou_thre)
             iou_tr.get_mapping(save=True)
             iou_tr.get_iou_save(save=True)
@@ -129,8 +138,8 @@ class graph_iou:
 
 
 
-
-
+ 
+from sklearn.metrics import roc_curve, auc
 
 def get_cm_iou(sze_checks_0 ,sze_check ,sze_check_un ,iou_dict={}, iou_per=70,labels = ['False', 'True'],nbinsx=100,):
         
@@ -138,9 +147,9 @@ def get_cm_iou(sze_checks_0 ,sze_check ,sze_check_un ,iou_dict={}, iou_per=70,la
         sze_check_un =np.array(sze_check_un )
         sze_checks_0 =np.array(sze_checks_0 ) 
         y_pred=(sze_check >= int(iou_per)/100).astype(int)   
-        y_tru=(sze_checks_0  >= 0).astype(int)   
+        y_true=(sze_checks_0  >= 0).astype(int)   
         iou_dict['single']={} 
-        iou_dict['single']['cm']=cm=hp.Confusion_matrix(y_true=y_tru,y_predicted=y_pred)
+        iou_dict['single']['cm']=cm=hp.Confusion_matrix(y_true=y_true,y_predicted=y_pred)
         accuracy, precision, recall, f1_score=hp.Compute_metrics(cm)  
         iou_dict['single']['metrics']=dict(accuracy=accuracy, 
                                            precision=precision, 
@@ -163,10 +172,13 @@ def get_cm_iou(sze_checks_0 ,sze_check ,sze_check_un ,iou_dict={}, iou_per=70,la
             marker=dict(color="blue"),  # Bar color
             opacity=0.6  # Set opacity
         )
- 
+        # print('[[[==ROC   Ytrue =]]]',y_true.shape)
+        # fpr, tpr, _ = roc_curve(y_true, sze_check_un) 
+        # roc_auc = auc(fpr, tpr)
+        # iou_dict['single']['roc_curve']=dict(fpr=fpr,tpr=tpr,roc_auc=roc_auc)
         y_pred=(sze_check_un  >= int(iou_per)/100).astype(int)     
         iou_dict['union']={} 
-        iou_dict['union']['cm']=cm=hp.Confusion_matrix(y_true=y_tru,y_predicted=y_pred)
+        iou_dict['union']['cm']=cm=hp.Confusion_matrix(y_true=y_true,y_predicted=y_pred)
         accuracy, precision, recall, f1_score=hp.Compute_metrics(cm)  
         iou_dict['union']['metrics']=dict(accuracy=accuracy, 
                                            precision=precision, 
@@ -190,28 +202,30 @@ def get_cm_iou(sze_checks_0 ,sze_check ,sze_check_un ,iou_dict={}, iou_per=70,la
             marker=dict(color="red"),   
             opacity=0.6   
         )
+
+        # fpr, tpr, _ = roc_curve(y_true, sze_check_un) 
+        # roc_auc = auc(fpr, tpr)
+        # iou_dict['union']['roc_curve']=dict(fpr=fpr,tpr=tpr,roc_auc=roc_auc)
         # iou_hist.append([hist ,hist_un ])
         return iou_dict
 
  
 
 class graph_cylinder_heatmap:
-    def __init__(self,pid,path_file,path_train,center_path,file_path_feat=None,):
-        pid.get_dend_data()   
-        self.path_file=path_file
-        self.pid=pid
-        self.path_train=path_train
-        self.center_path=center_path 
-        self.file_path_feat=file_path_feat  
-
-        self.spine_path=self.path_file[self.path_train[self.center_path]] 
+    def __init__(self,pid,spine_path,):
+        pid.get_dend_data()    
+        self.pid=pid 
+        self.spine_path=spine_path
+ 
 
     def coordinates(self): 
         spine_path=self.spine_path   
-        count_path=os.path.join(self.file_path_feat, 'skl_shaft_vectices.txt')#os.path.join(self.file_path_feat, 'shaft_vertices_center.txt')
-        skl_shaft_distance=np.loadtxt(os.path.join(self.file_path_feat, 'skl_shaft_distance.txt'))
+        count_path=os.path.join(spine_path, 'skl_shaft_vertices.txt')#os.path.join(self.file_path_feat, 'shaft_vertices_center.txt')
+        # skl_shaft_distance=np.loadtxt(os.path.join(spine_path, 'skl_shaft_distance.txt'))
         if os.path.exists(count_path): 
             shaft_vertices_center=np.loadtxt(count_path, dtype=float)
+        else:
+            raise(f'{count_path} DOESNT EXIST')
         paath=os.path.join(spine_path,self.pid.txt_spine_count)
         if not os.path.exists(paath):
             return

@@ -25,15 +25,16 @@ def get_load_smooth(dend_path_original_m,
     print('-----------=================get_load_smooth===============----------',) 
 
     nbm=1
+    time_start = time.time()
     dend_path_original=os.path.join(dend_path_original_m,f'{dend_name}.obj')  
-     
-    time_start = time.time()   
-    mesh=trimesh.load_mesh(os.path.join(dend_path_original_new_smooth,f'{dend_name}.obj'))   
-    np.savetxt(os.path.join(file_path,txt_vertices_0),mesh.vertices, fmt='%f') 
-    np.savetxt(os.path.join(file_path,txt_faces),mesh.faces, fmt='%d') 
+    if os.path.exists(dend_path_original):
+           
+        mesh=trimesh.load_mesh(os.path.join(dend_path_original_new_smooth,f'{dend_name}.obj'))   
+        np.savetxt(os.path.join(file_path,txt_vertices_0),mesh.vertices, fmt='%f') 
+        np.savetxt(os.path.join(file_path,txt_faces),mesh.faces, fmt='%d') 
 
-    vertices,_=Obj_to_coord(file_path_original=dend_path_original,)  
-    np.savetxt(os.path.join(file_path,txt_vertices_1), vertices, fmt='%f') 
+        vertices,_=Obj_to_coord(file_path_original=dend_path_original,)  
+        np.savetxt(os.path.join(file_path,txt_vertices_1), vertices, fmt='%f') 
 
 
     mytime0 = time.time() - time_start 

@@ -21,8 +21,24 @@ from dend_fun_0.get_path import get_files,get_app_param ,safe_id
 from dend_fun_0.help_graph import get_iou_graph,get_cm_iou,compute_kl 
 from dend_fun_0.help_save_iou import iou_train
 import pandas as pd
+import pickle
+from sklearn.metrics import roc_curve, auc
  
- 
+
+
+
+
+ccoll = [
+        'red', 'yellow', 'blue', 'green', 'black', 'purple',
+        'orange', 'pink', 'brown', 'cyan', 'magenta', 'lime',
+        'teal', 'navy', 'maroon', 'olive', 'gold', 'silver'
+    ] 
+     
+ccol=[]
+for _ in range( 1000):
+    ccol=ccol+ccoll
+
+
 def add_unit(label, unit="µm",):
     return f"{label} ({unit})"
 
@@ -64,6 +80,8 @@ def get_metric(
 
 
 
+import random
+
 
 dtype = float
 class app_param(get_files,get_app_param): 
@@ -76,23 +94,70 @@ class app_param(get_files,get_app_param):
                 data_studied=None,
                 dend_path_inits=None,
                 path_file=None,
+                path_file_sub=None,
                 prevent_initial_call=False,  
                 pinn_dir_data=None,
                 dend_data=None,
-                path_switch=['dest_spine_path_pre','dest_spine_path'],
+                path_display_dic=None, 
+                path_display= ['dest_shaft_path', 'dest_spine_path',],
                 model_type=None,
                 obj_org_path_dict=None,
                 model_sufix_dic=None, 
+                path_file_dir=None,
+                param_dic=None,
 
                  ):
         pass 
-        self.file_path_org=file_path_org
-        self.path_switch=path_switch
         path_dir=os.path.join(file_path_org, 'data')
         model_sufix_all=np.loadtxt(os.path.join(path_dir, 'model_sufix_all.txt'),dtype=str,ndmin=1) 
         pinn_dir_data_all=np.loadtxt(os.path.join(path_dir, 'pinn_dir_data_all.txt'),dtype=str,ndmin=1)
         path_heads=np.loadtxt(os.path.join(path_dir, 'path_heads.txt'),dtype=str,ndmin=1)
         true_keys=np.loadtxt(os.path.join(path_dir, 'true_keys.txt'),dtype=str,ndmin=1)
+        self.path_heads_show=None
+        self.path_heads_show = self.path_heads_show if self.path_heads_show is not None else path_heads
+        self.file_path_org=file_path_org
+        if path_file_dir is not None:
+            with open(path_file_dir, "rb") as f: 
+                loaded_dict = pickle.load(f) 
+            path_file_dir=loaded_dict['path_file_dir']
+            path_train=loaded_dict['path_train']
+            self.path_file_init=path_file=loaded_dict['path_file']
+            self.path_file_sub_init=loaded_dict['path_file_sub']
+            pinn_dir_data=loaded_dict['pinn_dir_data']
+            dend_data=loaded_dict['dend_data']
+            obj_org_path_dict=loaded_dict['obj_org_path_dict']
+            model_sufix_dic=loaded_dict['model_sufix_dic']
+            self.path_display=loaded_dict['path_display']
+            path_display_dic=loaded_dict['path_display_dic']
+            self.path_heads_show=model_sufix_dic.get('path_heads_show',None)
+            # Default structure
+            self.param_dic = {
+                hh: {
+                    kk: True
+                    for kk in [
+                        'get_pinn_features',
+                        'get_wrap',
+                        'get_scale',
+                        'get_smooth',
+                        'get_shaft_pred',
+                        'get_dend_name',
+                    ]
+                }
+                for hh in ['tf_restart', 'get_info', 'data']
+            }
+
+            # Load saved param_dic if available
+            self.param_dic = loaded_dict.get('param_dic', self.param_dic)
+
+            # Ensure data/get_dend_name has the correct structure
+            if self.param_dic['data']['get_dend_name'] ==True:
+                self.param_dic['data']['get_dend_name'] =  {
+                                                                            'dict_dend_path': 'current',
+                                                                            'drop_dic_name': None,
+                                                                        } 
+
+
+
         if dend_data is not None: 
             dend_names=dend_names if not None else dend_data['dend_names']
             dend_namess=dend_namess if not None else dend_data['dend_namess']
@@ -105,7 +170,8 @@ class app_param(get_files,get_app_param):
                             dend_path_inits=dend_path_inits,
                             data_studied=data_studied,   
                             model_sufix=model_sufix,
-                            # path_file=path_file,
+                            path_file=path_file,
+                            path_file_sub=path_file_sub,
                             pinn_dir_data=pinn_dir_data,
                             pinn_dir_data_all=pinn_dir_data_all,
                             model_sufix_all=model_sufix_all,
@@ -114,6 +180,9 @@ class app_param(get_files,get_app_param):
                             path_heads=path_heads, 
                             obj_org_path_dict=obj_org_path_dict,
                             model_sufix_dic=model_sufix_dic,
+                            path_display_dic=path_display_dic, 
+                            param_dic=self.param_dic,
+                            # path_file_dir=path_file_dir,
                  )
         self.path_train=path_train
         self.index=index
@@ -124,23 +193,54 @@ class app_param(get_files,get_app_param):
                                dropdown_true_keys_option=self.dropdown_true_keys_option,
                                ) 
         self.get_model_opt_name(model_sufix=model_sufix,model_type=model_type )
-        self.get_dend_name(data_studied=data_studied,index=0 ) 
-        file_path=self.file_path 
+        # print('[[[[[[[[[]]]]]]]]]',self.param_dic['data']['get_dend_name'])
+        self.get_dend_name(data_studied=data_studied,index=0, 
+                            **self.param_dic['data']['get_dend_name'],) 
+        cxc=self.param_dic['data']['get_dend_name']['dict_dend_path'] 
+        file_path_feat=self.dict_dend['path'][cxc]['file_path_feat']
+        file_path=self.file_path=self.dict_dend['path'][cxc]['file_path'] 
+        path_dir=self.model_sufix_dic['path_dir']
+        # if path_file_dir is not None:
+        #     with open(path_file_dir, "rb") as f: 
+        #         loaded_dict = pickle.load(f) 
+        #     self.path_file_dir=loaded_dict['path_file_dir']
+        #     self.path_train=loaded_dict['path_train']
+        #     self.path_file=loaded_dict['path_file']
+        #     self.path_file_sub=loaded_dict['path_file_sub']
+        #     self.pinn_dir_data=loaded_dict['pinn_dir_data']
+        #     self.dend_data=loaded_dict['dend_data']
+        #     self.obj_org_path_dict=loaded_dict['obj_org_path_dict']
+        #     self.model_sufix_dic=loaded_dict['model_sufix_dic']
+        #     self.path_display=loaded_dict['path_display']
+        #     self.path_display_dic=loaded_dict['path_display_dic']
+        #     self.path_heads_show=self.model_sufix_dic.get('path_heads_show',None)
+
+
+         
         dend_name=self.dend_name or dend_names[index]
-        dend_namess=self.dend_namess   
- 
+        dend_namess=self.dend_namess    
         self.prevent_initial_call=prevent_initial_call
-        id_name_end=f'{model_type}_{dend_name}_{index}_{file_path}_{model_sufix}'
+        num = random.randint(100000000, 9999999999) 
+        id_name_end=f'{model_type}_{dend_name}_{index}_{file_path}_{model_sufix}_{num}'
         id_name_end=safe_id(id_name_end)   
+        # if path_train['dest_shaft_path'] no
+        # print('---------',path_train['dest_shaft_path'])
+        '''
+        if path_train['dest_shaft_path'] not in list(self.path_file.keys()):
+            self.Output=[]
+            self.Input=[]
+            return'''
         spine_path = self.path_file[path_train['dest_shaft_path']]   
         # spine_path = self.path_file[path_train['dest_spine_path']]  
         iou_count = np.loadtxt(os.path.join(spine_path , self.txt_spine_iou), dtype=float)
-        print('iou_count',len(iou_count),id_name_end,dend_name) 
+        # print('iou_count',len(iou_count),id_name_end,dend_name) 
         iou_count=iou_count if iou_count.ndim==2 else np.array([[-1,-1,0,0]])
         
         self.model_test()
         self.more_param(id_name_end=id_name_end,
+                        model_type=model_type,
                         model_sufix=model_sufix,
+                        path_dir=path_dir,
                         dend_name=dend_name,)
         self.get_dropdown_cluster(id_name_end,iou_count[:,:2].astype(int))
         self.get_dropdown_index(id_name_end=id_name_end,
@@ -196,11 +296,13 @@ class app_param(get_files,get_app_param):
         self.get_dend_name(data_studied=data_studied,
                            index=index,
                             dend_names= self.dend_names,
-                            dend_namess=self.dend_namess,
-                            dend_path_inits=self.dend_path_inits,) 
+                            dend_namess=self.dend_namess,  
+                            **self.param_dic['data']['get_dend_name'],) 
+        cxc=self.param_dic['data']['get_dend_name']['dict_dend_path'] 
+        file_path_feat=self.dict_dend['path'][cxc]['file_path_feat']
+        file_path=self.file_path=self.dict_dend['path'][cxc]['file_path'] 
         spine_path= self.path_file[path_train['dest_shaft_path']] 
-        # spine_path= self.path_file[path_train['dest_spine_path']] 
-        file_path=self.file_path 
+        # spine_path= self.path_file[path_train['dest_spine_path']]  
         dend_name=self.dend_name 
         dend_namess=self.dend_namess 
         self.plot_data_iou=None 
@@ -208,28 +310,39 @@ class app_param(get_files,get_app_param):
         self.plot_data_iou_dic={}
         self.plot_data_center_curv={} 
         self.plot_data_cylinder_heatmap={} 
+        self.annot_intensity={ke:{} for ke in self.inten_file_train} 
+        self.logit_intensity={ke:{} for ke in self.intensity_spines_logit} 
         self.iou_count={}
         self.scatter_loss_dic={}
         self.scatter_iou_dic={}
         self.scatter_loss_spine_dic={}
         self.scatter_iou_spine_dic={}
+        self.scatter_auc_spine_dic={}
+        self.scatter_dice_spine_dic={}
         self.metric_total_dic={}
        #   self.metric_total_dic['union']['single']={}
         self.metric_total_dic={}
         self.metric_total_dic['single']={}
         self.metric_total_dic['union']={}
+        self.metric_total_dic['single_dice']={}
+        self.metric_total_dic['union_dice']={}
         self.iou_tr={}
+ 
+
         # self.metric_total_dic = {
         #     key: {}
         #     for iii in self.dend_path_original_mm['keys'].values() 
         #     for key in (f'single_{iii}', f'union_{iii}')
-        # }
-
-        for path_head in self.path_heads:
-            for model_suf in self.model_sufix_all:
-                for path in self.pinn_dir_data_all: 
+        # } 
+        # print('[[[[[[[[[=============================]]]]]]]]]',self.path_heads,self.path_heads_show)
+        for path_head in self.model_sufix_dic['path_heads_show']:
+            for model_suf in self.model_sufix_dic['model_sufix_show']:
+                for path    in self.model_sufix_dic['path_dirs_show']: 
                     id_path=f'{path_head}_{model_suf}_{path}' 
-
+                    # if not path in self.path_display_dic['path']:
+                    #     continue 
+                    if id_path not in self.path_file:
+                        continue
                     fgff=os.path.join(self.path_file[id_path], self.txt_spine_iou)
                     if os.path.exists(fgff):
                         self.iou_count[id_path]=  np.loadtxt(fgff, dtype=float)    
@@ -243,9 +356,23 @@ class app_param(get_files,get_app_param):
                     if os.path.exists(path_grap_center_curv):
                         with open(os.path.join(path_grap_center_curv), "rb") as file:
                             self.plot_data_cylinder_heatmap[id_path] = pickle.load(file) 
+                            
+                    for intensity_type in self.inten_file_train :
+                        path_grap_center_curv=os.path.join(self.path_file[id_path] ,f'{intensity_type}.txt')
+                        if os.path.exists(path_grap_center_curv):
+                            self.annot_intensity[intensity_type][id_path] = path_grap_center_curv
 
 
                     ''' DONT DELETE
+                    for intensity_type in self.intensity_spines_logit:
+                        path_grap_center_curv=self.path_file_sub[intensity_type][id_path] 
+                        if os.path.exists(path_grap_center_curv):
+                            self.logit_intensity[intensity_type][id_path] = path_grap_center_curv
+
+
+
+
+
                     self.scatter_loss_data=[] 
                     tyy =self.inten_file_model_head_neck_loss[0]
                     loss_path=self.path_file_sub[tyy][id_path]
@@ -289,45 +416,56 @@ class app_param(get_files,get_app_param):
 
                     scatter_loss_data=[] 
                     tyy =self.inten_file_model_spine_loss[0]
-                    loss_path=self.path_file_sub[tyy][id_path]
-                    # print('ooop------',loss_path)
-
-                    if os.path.exists(loss_path):
-                        self.loss_data = np.loadtxt(loss_path, dtype=float)  
+                    loss_path=self.path_file_sub[tyy].get(id_path,None)
+                    # print('ooop------',loss_path,self.path_file_sub[tyy].keys())
+                    # print('ooop------',id_path,id_path in list(self.path_file_sub[tyy].keys()))
+                    # if loss_path is None:
+                        # continueloss_path is not None and 
+                    if loss_path is not None and os.path.exists(loss_path):
+                        self.loss_data = np.loadtxt(loss_path, dtype=float,ndmin=1)  
+                        # print('pp----------',self.loss_data )
                         self.loss_data= np.vstack((np.arange(len(self.loss_data)),self.loss_data)).T
-                        # print('pp----------',self.loss_data.shape)
                         scatter_loss_data.append(
                                 hf.plotly_scatter(points=self.loss_data ,
                                                 color='red',
                                                 size=4.07,
                                                 opacity=.8,
-                                                name='Approx')
+                                                name='Approx',)
                                                 ) 
 
                     self.scatter_loss_spine_dic[id_path]= scatter_loss_data
 
+                                     
                     tyy =self.inten_file_model_spine_iou[0] 
                     scatter_iou_data=[]   
-
-                                    
                     cnt=True
                     for ii,(tyyy,nam,couleur) in enumerate(zip(self.inten_file_model_train_spine_iou,['shaft','spine'],['red','blue'])):
                         # iou_path=self.model_dir_path['head_neck']['iou'][ii]
-                        iou_path=self.path_file_sub[tyy][id_path][tyyy]
-                        if os.path.exists(iou_path): 
-                            _data=np.loadtxt(iou_path,dtype=float)  
-                            m1,m2=.2,.8
-                            for ii,(symb,mdd,siz) in enumerate(zip(['star','star','star','star','square','square'],
-                                                            ['train','train','train','train','test','test'],
-                                                            [m1,m1,m1,m1,m2,m2])):
-                                if ii<_data.shape[1]:
-                                    _dataa= np.hstack((np.arange(len(_data)).reshape(-1,1),_data[:,ii:ii+1])) 
-                                    scatter_iou_data.append(hf.plotly_scatter(points=_dataa ,
-                                                            color=couleur,
-                                                            size=10.,
-                                                            opacity=siz,
-                                                            name=f'{nam}_{mdd}_{ii}',
-                                                            symbol=symb))
+                        # if  loss_path is None:
+                        #     continue
+                        if id_path in list(self.path_file_sub[tyy].keys()):
+                        #     continue
+                            iou_path=self.path_file_sub[tyy][id_path][tyyy]
+                            if os.path.exists(iou_path) and os.path.getsize(iou_path) > 0: 
+                                # print('[[[[[[[[[[[------========-------]]]]]]]]]]]',os.path.getsize(iou_path))
+                                try: 
+                                    _data=np.loadtxt(iou_path,dtype=float) 
+                                except ValueError: 
+                                    continue
+                                if len(_data)<=0 or len(_data.shape)==1:
+                                    continue
+                                m1,m2=.2,.8
+                                for ii,(symb,mdd,siz) in enumerate(zip(['star','star','star','star','square','square'],
+                                                                ['train','train','train','train','test','test'],
+                                                                [m1,m1,m1,m1,m2,m2])):
+                                    if ii<_data.shape[1]:
+                                        _dataa= np.hstack((np.arange(len(_data)).reshape(-1,1),_data[:,ii:ii+1])) 
+                                        scatter_iou_data.append(hf.plotly_scatter(points=_dataa ,
+                                                                color=couleur,
+                                                                size=10.,
+                                                                opacity=siz,
+                                                                name=f'{nam}_{mdd}_{ii}',
+                                                                symbol=symb))
 
                         elif os.path.exists(self.df_metric_algorithms_dir) and cnt: 
                             df_union=pd.read_csv(self.df_metric_algorithms_dir)#.sort_values(by=f'Accuracy', ascending=True) 
@@ -359,6 +497,116 @@ class app_param(get_files,get_app_param):
                     self.scatter_iou_spine_dic[id_path]=scatter_iou_data
 
 
+
+                                     
+                    tyy =self.inten_file_model_spine_auc[0] 
+                    scatter_data=[]   
+                    cnt=True
+                    for ii,(tyyy,nam,couleur) in enumerate(zip(self.inten_file_model_train_spine_auc,['shaft','spine'],['red','blue'])): 
+
+                        # if id_path not in list(self.path_file_sub[tyy].keys()):
+                        #     continue
+                        # iou_path=self.path_file_sub[tyy][id_path][tyyy]
+                        # if os.path.exists(iou_path) and os.path.getsize(iou_path) > 0:  
+                        #     try: 
+                        #         _data=np.loadtxt(iou_path,dtype=float) 
+                        #     except ValueError: 
+                        #         continue
+                        #     if len(_data)<=0 :
+                        #         continue   
+                        #     scatter_data.append(hf.plotly_scatter(points=_dataa ,
+                        #                             color=couleur,
+                        #                             size=10.,
+                        #                             opacity=siz,
+                        #                             name=f'{nam}'
+                        #                             ))
+
+
+                        # iou_path=self.model_dir_path['head_neck']['iou'][ii]
+                        # if  loss_path is None:
+                        #     continue
+                        if id_path in list(self.path_file_sub[tyy].keys()):
+                        #     continue
+                            iou_path=self.path_file_sub[tyy][id_path][tyyy]
+                            if os.path.exists(iou_path) and os.path.getsize(iou_path) > 0: 
+                                # print('[[[[[[[[[[[------========-------]]]]]]]]]]]',os.path.getsize(iou_path))
+                                try: 
+                                    _data=np.loadtxt(iou_path,dtype=float) 
+                                except ValueError: 
+                                    continue
+                                if len(_data)<=0 or len(_data.shape)==1:
+                                    continue
+                                m1,m2=.2,.8
+                                for ii,(symb,mdd,siz) in enumerate(zip(['star','star','star','star','square','square'],
+                                                                ['train','train','train','train','test','test'],
+                                                                [m1,m1,m1,m1,m2,m2])):
+                                    if ii<_data.shape[1]:
+                                        _dataa= np.hstack((np.arange(len(_data)).reshape(-1,1),_data[:,ii:ii+1])) 
+                                        scatter_data.append(hf.plotly_scatter(points=_dataa ,
+                                                                color=couleur,
+                                                                size=10.,
+                                                                opacity=siz,
+                                                                name=f'{nam}_{mdd}_{ii}',
+                                                                symbol=symb))
+
+
+
+                    self.scatter_auc_spine_dic[id_path]=scatter_data
+
+ 
+ 
+
+
+                                     
+                    tyy =self.inten_file_model_spine_dice[0] 
+                    scatter_data=[]   
+                    cnt=True
+                    for ii,(tyyy,nam,couleur) in enumerate(zip(self.inten_file_model_train_spine_dice,['shaft','spine'],['red','blue'])): 
+
+                        # if id_path not in list(self.path_file_sub[tyy].keys()):
+                        #     continue
+                        # iou_path=self.path_file_sub[tyy][id_path][tyyy]
+                        # if os.path.exists(iou_path) and os.path.getsize(iou_path) > 0:  
+                        #     try: 
+                        #         _data=np.loadtxt(iou_path,dtype=float) 
+                        #     except ValueError: 
+                        #         continue
+                        #     if len(_data)<=0 :
+                        #         continue   
+                        #     scatter_data.append(hf.plotly_scatter(points=_dataa ,
+                        #                             color=couleur,
+                        #                             size=10.,
+                        #                             opacity=siz,
+                        #                             name=f'{nam}'
+                        #                             ))
+
+                        if id_path not in list(self.path_file_sub[tyy].keys()):
+                            continue
+                        iou_path=self.path_file_sub[tyy][id_path][tyyy]
+                        if os.path.exists(iou_path) and os.path.getsize(iou_path) > 0: 
+                            # print('[[[[[[[[[[[------========-------]]]]]]]]]]]',os.path.getsize(iou_path))
+                            try: 
+                                _data=np.loadtxt(iou_path,dtype=float) 
+                            except ValueError: 
+                                continue
+                            if len(_data)<=0 or len(_data.shape)==1:
+                                continue
+                            m1,m2=.2,.8
+                            for ii,(symb,mdd,siz) in enumerate(zip(['star','star','star','star','square','square'],
+                                                            ['train','train','train','train','test','test'],
+                                                            [m1,m1,m1,m1,m2,m2])):
+                                if ii<_data.shape[1]:
+                                    _dataa= np.hstack((np.arange(len(_data)).reshape(-1,1),_data[:,ii:ii+1])) 
+                                    scatter_data.append(hf.plotly_scatter(points=_dataa ,
+                                                            color=couleur,
+                                                            size=10.,
+                                                            opacity=siz,
+                                                            name=f'{nam}_{mdd}_{ii}',
+                                                            symbol=symb))
+
+                    self.scatter_dice_spine_dic[id_path]=scatter_data
+
+ 
 
  
 
@@ -406,12 +654,25 @@ class app_param(get_files,get_app_param):
 
 
 
-
+        self.metric_total_dic['roc_curve']={}
+        self.metric_total_dic['roc_curve']['curve']={'spine':[],'shaft':[]}
+        self.metric_total_dic['roc_curve']['score']={'spine':[],'shaft':[]}
+        icoci=0
         for iii,(true_path,true_key) in enumerate( self.dend_path_original_mm['keys'].items() ):
-            for path_head in self.path_heads:
-                for model_suf in self.model_sufix_all:
-                    for path in self.pinn_dir_data_all: 
+            for path_head in self.model_sufix_dic['path_heads_show']:
+                for model_suf in self.model_sufix_dic['model_sufix_show']:
+                    for path in self.model_sufix_dic['path_dirs_show']: 
                         id_path=f'{path_head}_{model_suf}_{path}'
+                        
+                        if id_path not in self.path_file:
+                            continue
+                        # if not path in self.path_display_dic['path']:
+                        #     continue
+                        # if not id_path in ppatt:
+                        #     continue
+                        nhh=self.model_sufix_dic['model_sufix_dic'][model_suf],self.model_sufix_dic['path_dirs_dic'][path]
+                        path_head_sh=self.model_sufix_dic['path_heads_dic'][path_head]
+                        id_path_nam=f'{path_head_sh}_{nhh[0]}_{nhh[1]}'
                         id_pathss=f'{path_head}_{model_suf}_{path}_{true_key}'
                         path_grap_iou=os.path.join(self.path_file[id_path] ,self.pkl_mp)
                         if os.path.exists(path_grap_iou):
@@ -420,60 +681,127 @@ class app_param(get_files,get_app_param):
                             self.iou_tr[id_pathss]=iou_train(
                                                 path_true=self.path_file[true_path],
                                                 path_appr=self.path_file[id_path],
-                                                mp=mp) 
+                                                mp=mp,
+                                                ) 
                             
                         path_grap_iou=os.path.join(self.path_file[id_path] ,f'plot_iou_graph_{true_key}.pkl')
                         if os.path.exists(path_grap_iou): 
                                 with open(os.path.join(path_grap_iou), "rb") as file: 
                                     self.plot_data_iou_dic[id_pathss]=pickle.load(file) 
- 
-
-
-
-
-
+                        '''
+                        # true_path=self.dend_path_original_mm['keys']['true_0']
+                        path_grap_iou=os.path.join(self.path_file[id_path] ,'intensity_spines_logit.txt')
+                        path_grap_true=os.path.join(self.path_file[true_path] ,'intensity_spines_logit.txt') 
+                        print(']]]]]]]][[[[[[[[[[[[[]]]]]]]]]]]]]',path_grap_iou)
+                        if os.path.exists(path_grap_iou) and os.path.exists(path_grap_true): 
+                            print(']]]]]]]][[[[[[[[[[[[[]]]]]]]]]]]]]',path_grap_iou)
+                            self.metric_total_dic['roc_curve']['true']+=np.loadtxt(path_grap_true,dtype=float)
+                            self.metric_total_dic['roc_curve']['score']+=np.loadtxt(path_grap_iou,dtype=float)
+'''
 
                         if model_suf !='save':
+                            spine_path_save=     self.path_file[f'result_{id_path}']
+                            for nm,nmm in zip(['shaft','spine'],['Shaft','Spine']):
+                                metric_path=os.path.join( spine_path_save,f'roc_{nm}_{true_key}.txt') 
+                                if os.path.exists(metric_path):
+                                    roc=np.loadtxt(metric_path,dtype=float)
+                                    scr=auc(roc[:,0], roc[:,1])
+                                    # print('======[[[[[[]]]]]]',roc)
+                                    self.metric_total_dic['roc_curve']['score'][nm]=scr
+                                    self.metric_total_dic['roc_curve']['curve'][nm].append(go.Scatter( 
+                                                                            x=roc[:,0], 
+                                                                            y=roc[:,1], 
+                                                                            mode="lines", 
+                                                                            name=f"{id_path_nam} (AUC {nmm} = {scr:.3f})", 
+                                                                            line=dict(width=3),
+                                                                            marker=dict(color=ccol[icoci]),
+                                                                            ) ,
+                                                                            )
+                            icoci+=1
+
+
+                            
                             spine_path_save=     self.path_file[f'result_{id_path}']
                             metric_path=os.path.join( spine_path_save,f'iou_{true_key}.csv') 
                             if os.path.exists(metric_path):
                                 df = pd.read_csv(metric_path)
                                 # print('----=====----','im her')
-                                sze_checks_0 ,sze_check ,sze_check_un=df['id_true'],df['iou_single'],df['iou_union']
                                 # nhf=df['id_true']>0
                                 # sze_checks_0 ,sze_check ,sze_check_un=sze_checks_0[nhf] ,sze_check[nhf] ,sze_check_un[nhf]
+                                sze_checks_0 ,sze_check ,sze_check_un=df['id_true'],df['iou_single'],df['iou_union']
                                 metric_name_path=df.columns
                                 iou_dict={}
                                 get_cm_iou(sze_checks_0 ,sze_check ,sze_check_un ,iou_dict=iou_dict, iou_per=70,labels = ['False', 'True'],nbinsx=300,) 
-                                accuracy , precision, recall, f1_score=iou_dict['single']['metrics'].values()
+                                accuracy , precision, recall, f1_score=iou_dict['single']['metrics'].values() 
                                 # self.metric_total_dic[id_path]={}
-                                self.metric_total_dic['single'][id_path]=dict(accuracy=accuracy,
-                                                                    precision=precision,
-                                                                    recall=recall,
-                                                                    f1_score=f1_score)
-                                accuracy, precision, recall, f1_score=iou_dict['union']['metrics'].values()
-                                self.metric_total_dic['union'][id_path]=dict(accuracy=accuracy,
+                                self.metric_total_dic['single'][id_path_nam]=dict(accuracy=accuracy,
                                                                     precision=precision,
                                                                     recall=recall,
                                                                     f1_score=f1_score) 
+                                accuracy, precision, recall, f1_score=iou_dict['union']['metrics'].values()
+                                self.metric_total_dic['union'][id_path_nam]=dict(accuracy=accuracy,
+                                                                    precision=precision,
+                                                                    recall=recall,
+                                                                    f1_score=f1_score,
+                                                                    )
+                                
+                                if 'dice_single' in list(df.columns):
+                                    sze_checks_0 ,sze_check ,sze_check_un=df['id_true'],df['dice_single'],df['dice_union']
+                                    metric_name_path=df.columns
+                                    iou_dict={}
+                                    get_cm_iou(sze_checks_0 ,sze_check ,sze_check_un ,iou_dict=iou_dict, iou_per=70,labels = ['False', 'True'],nbinsx=300,) 
+                                    accuracy , precision, recall, f1_score=iou_dict['single']['metrics'].values() 
+                                    # self.metric_total_dic[id_path]={}
+                                    self.metric_total_dic['single_dice'][id_path_nam]=dict(accuracy=accuracy,
+                                                                        precision=precision,
+                                                                        recall=recall,
+                                                                        f1_score=f1_score) 
+                                    accuracy, precision, recall, f1_score=iou_dict['union']['metrics'].values()
+                                    self.metric_total_dic['union_dice'][id_path_nam]=dict(accuracy=accuracy,
+                                                                        precision=precision,
+                                                                        recall=recall,
+                                                                        f1_score=f1_score,
+                                                                        )
+                                
+
+
+                                for uuyy in ['single','union','single_dice','union_dice',]:
+                                    if (uuyy in self.metric_total_dic) and (id_path_nam in self.metric_total_dic[uuyy]):
+                                        for nm in ['shaft','spine']: 
+                                            self.metric_total_dic[uuyy][id_path_nam][f'AUC_{nm}']=self.metric_total_dic['roc_curve']['score'][nm]
+
+
+
+
+
+
             if len(self.metric_total_dic['single'])>0:
                 df_union=pd.DataFrame(self.metric_total_dic['union']).T.sort_values(by='accuracy', ascending=False)
                 df_union.to_csv(os.path.join(self.path_file[f'result_appr'],f'metric_union_{true_key}.csv'))
                 df_single=pd.DataFrame(self.metric_total_dic['single']).T.sort_values(by='accuracy', ascending=False)
                 df_single.to_csv(os.path.join(self.path_file[f'result_appr'],f'metric_single_{true_key}.csv'))
+            if len(self.metric_total_dic['single_dice'])>0:
+                df_union=pd.DataFrame(self.metric_total_dic['union_dice']).T.sort_values(by='accuracy', ascending=False)
+                df_union.to_csv(os.path.join(self.path_file[f'result_appr'],f'metric_union_dice_{true_key}.csv'))
+                df_single=pd.DataFrame(self.metric_total_dic['single_dice']).T.sort_values(by='accuracy', ascending=False)
+                df_single.to_csv(os.path.join(self.path_file[f'result_appr'],f'metric_single_dice_{true_key}.csv'))
  
         self.file_path =file_path
         self.dend_name=dend_name
         self.itera=index  
 
         self.vertices_0=vertices_0       = np.loadtxt(os.path.join(self.file_path, self.txt_vertices_0), dtype=float) 
-        self.vertices_00=vertices_00      = np.loadtxt(os.path.join(self.file_path, self.txt_vertices_1), dtype=float)
+        
+        self.vertices_00=vertices_00      = np.loadtxt(os.path.join(self.file_path, self.txt_vertices_old), dtype=float)
         self.faces=faces = np.loadtxt(os.path.join(self.file_path, self.txt_faces), dtype=int)
 
 
         print(f'Starting analysis of {dend_name}')
         print(f"Number of vertices: {len(vertices_0)}")
+        print(f"Number of vertices: {len(vertices_00)}")
         print(f"Number of faces: {len(faces)}")
+        print(f"Number of vertices: {os.path.join(self.file_path, self.txt_vertices_0)}")
+        print(f"Number of vertices: {os.path.join(self.file_path, self.txt_vertices_old)}")
         
         self.inten={} 
         for port in self.pre_portions:
@@ -540,7 +868,7 @@ class app_param(get_files,get_app_param):
             # scatter=[] 
             self.spine_index = spine_index = np.loadtxt(os.path.join(spine_path, f'{self.name_spine}_{self.name_index}_{clustss}.txt'),dtype=int)
             self.spine_faces =spine_faces  = np.loadtxt(os.path.join(spine_path, f'{self.name_spine}_{self.name_faces}_{clustss}.txt'),dtype=int)
-            print(os.path.join(spine_path, f'{self.name_spine}_{self.name_index}_{clustss}.txt') )
+            # print(os.path.join(spine_path, f'{self.name_spine}_{self.name_index}_{clustss}.txt') )
 
             self.figure_3d=cu.plotly_mesh(vertices=vertices_pl[spine_index],
                                                     faces=spine_faces,
@@ -612,8 +940,8 @@ class app_param(get_files,get_app_param):
                     index=index,
                     ) 
         print('---------',true_keys,path,mode,dendd,path_head,'---inte',intensity_type,'===',model_suf,self.model_sufix)
-        print('---------',path_train['dest_spine_path'],path_train['dest_spine_path_pre'],self.path_file_sub[intensity_type][id_path] )
-        self.spine_path=spine_path=self.path_file_sub[self.inten_file_sub[0]][id_path] 
+        # print('---------',path_train['dest_spine_path'],self.path_file_sub[intensity_type][id_path] )
+        # self.spine_path=spine_path=self.path_file_sub[self.inten_file_sub[0]][id_path] 
         dend_name=self.dend_name 
         bcouleur=self.bcouleur
         fsize=self.fsize 
@@ -637,27 +965,34 @@ class app_param(get_files,get_app_param):
  
         vertices_pl= self.vertices_0 if dendd=='smooth' else self.vertices_00 
 
-        intensity=None
+        intensity=None;intensity_path=''
         if intensity_type in self.inten_file_sub:  
             intensity_path =self.path_file_sub[intensity_type][id_path]
-            intensity_path = intensity_path if os.path.exists(intensity_path) else self.path_file_sub[intensity_type][f'{path_head}_{model_suf}_{path_init}']
+            # intensity_path = intensity_path if os.path.exists(intensity_path) else self.path_file_sub[intensity_type][f'{path_head}_{model_suf}_{path_init}']
             # intensity=np.loadtxt(intensity_path, dtype=float)
             # print('spine--------',intensity_path)
+            if not os.path.exists(intensity_path):
+                print('[[[[[Fail intensity_path]]]]]--------',intensity_path)
+
         elif intensity_type in self.inten_file:
             intensity_path =self.path_file_sub[intensity_type][id_path] 
             intensity_path = intensity_path if os.path.exists(intensity_path) else self.path_file_sub[intensity_type][f'{path_head}_{model_suf}_{path_init}']
-            # intensity=np.loadtxt(intensity_path, dtype=float)
-            # print('spine--------',intensity_path) 
+            if not os.path.exists(intensity_path):
+                print('[[[[[Fail intensity_path]]]]]--------',intensity_path)
         elif intensity_type in self.inten_pca:
             intensity_path =self.path_file_sub[intensity_type][id_path]
             intensity_path = intensity_path if os.path.exists(intensity_path) else self.path_file_sub[intensity_type][f'{path_head}_{model_suf}_{path_init}']
             # intensity=np.loadtxt(intensity_path, dtype=float)
             # print('spine--------',intensity_path) 
         elif intensity_type in self.inten_file_train:
-            intensity_path =self.path_file_sub[intensity_type][id_path]
-            intensity_path = intensity_path if os.path.exists(intensity_path) else self.path_file_sub[intensity_type][f'{path_head}_{model_suf}_{path_init}']
-            # print('spine--------',intensity_path) 
+            intensity_path =self.path_file_sub[intensity_type][id_path]#self.annot_intensity[intensity_type][id_path]#
+            if not os.path.exists(intensity_path):
+                print('[[[[[Fail intensity_path]]]]]--------',intensity_path) 
             # intensity=np.loadtxt(intensity_path, dtype=float)
+        elif intensity_type in self.intensity_spines_logit:
+            intensity_path =self.path_file_sub[intensity_type][id_path]#self.annot_intensity[intensity_type][id_path]#
+            if not os.path.exists(intensity_path):
+                print('[[[[[Fail intensity_path]]]]]--------',intensity_path)
 
         elif intensity_type in self.inten_file_model_head_neck:
             intensity_path =self.path_file_sub[intensity_type][id_path]
@@ -668,7 +1003,7 @@ class app_param(get_files,get_app_param):
 
         elif intensity_type in self.base_features_dict.keys():
             intensity_path =self.path_file_sub[intensity_type][id_path]
-            intensity_path = intensity_path if os.path.exists(intensity_path) else self.path_file_sub[intensity_type][f'{path_head}_{model_suf}_{path_init}']
+            # intensity_path = intensity_path if os.path.exists(intensity_path) else self.path_file_sub[intensity_type][f'{path_head}_{model_suf}_{path_init}']
             # intensity=np.loadtxt(intensity_path, dtype=float)
  
         intensity= None 
@@ -676,19 +1011,19 @@ class app_param(get_files,get_app_param):
             intensity=np.loadtxt(intensity_path, dtype=float)
             print('spine--------',intensity_path)
         else:
-             print('Intensity DOESNT EXIST --------',intensity_path)
-            # intensity_path =self.path_file_sub[intensity_type]['true_save_save'] 
-        # elif intensity_type in ['spine_body','head_neck_body']: 
-        #     intensity_path=self.inten[intensity_type] 
-        # else:
-        #     intensity_path = self.dend_mapping[dendd]["intensity"][intensity_type] 
+            print('Intensity DOESNT EXIST --------',intensity_path)
+                # intensity_path =self.path_file_sub[intensity_type]['true_save_save'] 
+            # elif intensity_type in ['spine_body','head_neck_body']: 
+            #     intensity_path=self.inten[intensity_type] 
+            # else:
+            #     intensity_path = self.dend_mapping[dendd]["intensity"][intensity_type] 
 
         if intensity_type in ["gauss_curv_init","mean_curv_init"]:
             vertices_pl=self.vertices_00
         elif intensity_type in ["gauss_curv_smooth","mean_curv_smooth"]:
             vertices_pl=self.vertices_0
 
- 
+
         figure=go.Figure()
         self.get_figure(true_keys,path_head,model_suf, path,vertices_pl,intensity, clusts, width, height,ffcouleur=ffcouleur  )
  
@@ -700,21 +1035,21 @@ class app_param(get_files,get_app_param):
             figure=akp.Plotly_Figure(data=self.scatter, layout=self.layout)
             figure.update_layout(scene=self.scene)  
         elif mode=='skeleton':
-            if self.plot_data_center_curv is not None: 
-                *pathc, last = path.split('_')
-                ppath=self.path_switch[0] if last=='pre' else 'dest_spine_path'
+            if self.plot_data_center_curv is not None:  
                 scatterr=self.plot_data_center_curv[id_path][clusts][0:1]
-                skl_path=os.path.join(self.file_path_feat, self.txt_skl_vectices)
+                skl_path=os.path.join(self.file_path_feat, self.txt_skl_vertices)
                 if os.path.exists(skl_path): 
-                    scatterr.append(hf.plotly_scatter(points=np.loadtxt(skl_path,dtype=float), color='yellow', size=5.3, name='skeleton init.',opacity=0.5))
+                    scatterr.append(hf.plotly_scatter(points=np.loadtxt(skl_path,dtype=float), color='yellow', size=5.3, name='skeleton smooth.',opacity=0.5))
+                skl_path=os.path.join(self.file_path_feat, self.txt_skl_vertices_org)
+                if os.path.exists(skl_path): 
+                    scatterr.append(hf.plotly_scatter(points=np.loadtxt(skl_path,dtype=float), color='green', size=5.3, name='skeleton init.',opacity=0.5))
                 for val in self.plot_data_center_curv[id_path][clusts][1:]:
                     scatterr.append(val)
                 figure=akp.Plotly_Figure(data= scatterr, layout=self.layout)
                 figure.update_layout(scene=self.scene)   
         elif mode in ['heatmap_cylinder','heatmap_cylinder_surface']:
             if self.plot_data_cylinder_heatmap is not None: 
-                *pathc, last = path.split('_')
-                ppath=self.path_switch[0] if last=='pre' else 'dest_spine_path'
+                *pathc, last = path.split('_') 
                 if mode =='heatmap_cylinder':
                     data=[self.plot_data_cylinder_heatmap[id_path].density_heatmap,self.plot_data_cylinder_heatmap[id_path].density_heatmap_points]
                     figure=akp.Plotly_Figure(data= data, layout=self.layout) 
@@ -742,11 +1077,18 @@ class app_param(get_files,get_app_param):
             width=width
             height=height
             subplot_titles=('IOU Single','IOU Union')
-            figure=akp.Plotly_Figure_Sub( subplot_titles,rows=2, cols=1, 
+            rows=2
+            listt=['single','union',]
+            if 'single_dice' in self.metric_total_dic:
+                subplot_titles=('IOU Single','IOU Union','DICE Single','DICE Union')
+                rows=4
+                listt=['single','union','single_dice','union_dice']
+
+            figure=akp.Plotly_Figure_Sub( subplot_titles,rows=rows, cols=1, 
                                             shared_xaxes=False,
                                             shared_yaxes=False)
             if len(self.metric_total_dic )>0: 
-                for ii,typ in enumerate(['single','union']):
+                for ii,typ in enumerate(listt):
                     # df_union=pd.read_csv(os.path.join(self.path_file[f'result_appr'],f'metric_{typ}.csv')).sort_values(by=f'single_{true_keys}', ascending=True)
                     df_union=pd.read_csv(os.path.join(self.path_file[f'result_appr'],f'metric_{typ}_{true_keys}.csv')).sort_values(by=f'accuracy', ascending=True)
                     xlabels=df_union.columns[1:]
@@ -766,28 +1108,8 @@ class app_param(get_files,get_app_param):
                                         # hovertemplate="Actual: %{y}<br>Predicted: %{x}<br>Count: %{z}<extra></extra>",
                                         showscale=False ,
                                         textfont=dict(size=18),
-                                    ) 
-
-                    # layout = go.Layout(
-                    #     # title=title, 
-                    #     width=width, 
-                    #     height=height, 
-                    #     xaxis=dict(title="Metric"),
-                    #     yaxis=dict(title="Models"),
-                    #         font=dict(size=14)
-                    # )
-                    figure.add_trace( scatter, row=ii+1, col=1)
-                    # figure.update_layout(layout )
-                # figure=akp.Plotly_Figure(data= scatter , layout=layout)
-                # figure.update_layout(scene=self.scene)
-            # xtitle="Metric" 
-            # ytitle="Model"
-            # figure.update_layout(
-            #     xaxis=dict(title=xtitle),
-            #     xaxis2=dict(title=xtitle),
-            #     yaxis=dict(title=ytitle),
-            #     yaxis2=dict(title=ytitle)
-            # )
+                                    )  
+                    figure.add_trace( scatter, row=ii+1, col=1) 
             figure.update_layout(height=2.5*height, width=width)
 
             figure.update_layout(
@@ -796,8 +1118,8 @@ class app_param(get_files,get_app_param):
                     ticks="outside",     # Optional: ticks outside the plot
                     showticklabels=True, # Ensure tick labels are visible 
                     tickmode="array",
-                    tickvals=['accuracy','precision','recall','f1_score'],
-                    ticktext=['Accuracy','Precision','Recall','F1 Score'],
+                    tickvals=['accuracy','precision','recall','f1_score','AUC_spine','AUC_shaft'],
+                    ticktext=['Accuracy','Precision','Recall','F1 Score','AUC Spine','AUC Shaft'],
                 )
             )
 
@@ -807,54 +1129,82 @@ class app_param(get_files,get_app_param):
                     ticks="outside",     # Optional: ticks outside the plot
                     showticklabels=True, # Ensure tick labels are visible 
                     tickmode="array",
-                    tickvals=['accuracy','precision','recall','f1_score'],
-                    ticktext=['Accuracy','Precision','Recall','F1 Score'],
+                    tickvals=['accuracy','precision','recall','f1_score','AUC_spine','AUC_shaft'],
+                    ticktext=['Accuracy','Precision','Recall','F1 Score','AUC Spine','AUC Shaft'],
+                )
+            )
+            figure.update_layout(
+                xaxis3=dict(
+                    side="top",          
+                    ticks="outside",     # Optional: ticks outside the plot
+                    showticklabels=True, # Ensure tick labels are visible 
+                    tickmode="array",
+                    tickvals=['accuracy','precision','recall','f1_score','AUC_spine','AUC_shaft'],
+                    ticktext=['Accuracy','Precision','Recall','F1 Score','AUC Spine','AUC Shaft'],
+                )
+            )
+            figure.update_layout(
+                xaxis4=dict(
+                    side="top",          
+                    ticks="outside",    
+                    showticklabels=True, 
+                    tickmode="array",
+                    tickvals=['accuracy','precision','recall','f1_score','AUC_spine','AUC_shaft'],
+                    ticktext=['Accuracy','Precision','Recall','F1 Score','AUC Spine','AUC Shaft'],
                 )
             )
             for annotation in figure['layout']['annotations']:
-                annotation['y'] += 0.03   
+                annotation['y'] += 0.045
 
         elif mode in self.inten_file_model_head_neck:  
             self.layout = go.Layout(width=width, 
                             height=height,  )
             # ['model_hn_loss','model_hn_iou']
-            if (mode == 'model_hn_loss' ) and len( self.scatter_loss_dic[id_path])>0: 
+            if (mode == 'model_hn_loss' ) and id_path in self.scatter_loss_dic and len( self.scatter_loss_dic[id_path])>0: 
                 figure=akp.Plotly_Figure(data=self.scatter_loss_dic[id_path], layout=self.layout)
                 figure.update_layout(scene=self.scene) 
-            elif (mode == 'model_hn_iou' ) and len(self.scatter_iou_dic[id_path])>0: 
+            elif (mode == 'model_hn_iou' ) and id_path in self.scatter_iou_dic and len(self.scatter_iou_dic[id_path])>0: 
                 figure=akp.Plotly_Figure(data= self.scatter_iou_dic[id_path], layout=self.layout)
                 figure.update_layout(scene=self.scene) 
 
-            if (mode == 'model_sp_loss' ) and len( self.scatter_loss_spine_dic[id_path])>0: 
+            if (mode == 'model_sp_loss' ) and id_path in self.scatter_loss_spine_dic and len( self.scatter_loss_spine_dic[id_path])>0: 
                 figure=akp.Plotly_Figure(data=self.scatter_loss_spine_dic[id_path], layout=self.layout)
                 figure.update_layout(scene=self.scene) 
-            elif (mode == 'model_sp_iou' ) and len(self.scatter_iou_spine_dic[id_path])>0: 
+            elif (mode == 'model_sp_iou' ) and id_path in self.scatter_iou_spine_dic and len(self.scatter_iou_spine_dic[id_path])>0: 
                 print('----=====----','9088==============---========================================',len(self.scatter_iou_spine_dic[id_path]))
                 figure=akp.Plotly_Figure(data= self.scatter_iou_spine_dic[id_path], layout=self.layout)
                 figure.update_layout(scene=self.scene)
+            elif (mode == 'model_sp_auc' ) and id_path in self.scatter_auc_spine_dic and len(self.scatter_auc_spine_dic[id_path])>0: 
+                print('----=====----','model_sp_auc==============---========================================',len(self.scatter_auc_spine_dic[id_path]))
+                figure=akp.Plotly_Figure(data= self.scatter_auc_spine_dic[id_path], layout=self.layout)
+                figure.update_layout(scene=self.scene)
+            elif (mode == 'model_sp_dice' ) and id_path in self.scatter_dice_spine_dic and len(self.scatter_dice_spine_dic[id_path])>0: 
+                print('----=====----','model_sp_auc==============---========================================',len(self.scatter_dice_spine_dic[id_path]))
+                figure=akp.Plotly_Figure(data= self.scatter_dice_spine_dic[id_path], layout=self.layout)
+                figure.update_layout(scene=self.scene)
                           
-                if path_head.startswith(('cML','CML','ML')): 
-                    figure.update_layout(
-                        xaxis=dict(
-                            side="bottom",  # keep the bottom axis if you want
-                            showticklabels=False  # hide bottom labels if you only want top
-                        ),
-                        xaxis2=dict(
-                            side="top",
-                            overlaying="x",        # align with the bottom axis
-                            ticks="outside",
-                            showticklabels=True,
-                            tickmode="array",
-                            tickvals=[0, 1, 2, 3],  # positions of your metrics
-                            ticktext=['Accuracy','Precision','Recall','F1 Score'],
-                        )
+            if path_head.startswith(('cML','CML','ML')): 
+                figure.update_layout(
+                    xaxis=dict(
+                        side="bottom",  # keep the bottom axis if you want
+                        showticklabels=False  # hide bottom labels if you only want top
+                    ),
+                    xaxis2=dict(
+                        side="top",
+                        overlaying="x",      
+                        ticks="outside",
+                        showticklabels=True,
+                        tickmode="array",
+                        tickvals=[0, 1, 2, 3],  
+                        ticktext=['Accuracy','Precision','Recall','F1 Score'],
                     )
+                )
 
-                    # Make sure your trace uses the top axis
-                    for trace in figure.data:
-                        trace.update(xaxis="x2")
+                # Make sure your trace uses the top axis
+                for trace in figure.data:
+                    trace.update(xaxis="x2")
 
-                                    
+                                
 
             elif mode == 'model_shap':
                 # figure=self.model_shap_dic[id_path]
@@ -862,9 +1212,50 @@ class app_param(get_files,get_app_param):
                 figure=akp.Plotly_Figure(data= self.model_shap_dic[id_path]['data'], layout=self.model_shap_dic[id_path]['layout'])
                 figure.update_layout(scene=self.scene) 
 
-   
 
-        elif mode in ['heatmap_iou','heatmap_iou_union','histogram_iou']: 
+        elif mode =='roc_curve':  
+            subplot_titles=('ROC Spine','ROC Shaft')
+            figure = akp.Plotly_Figure_Sub(
+                subplot_titles,
+                rows=2, cols=1,
+                shared_xaxes=False,
+                shared_yaxes=False
+            )
+
+            if len(self.metric_total_dic['roc_curve']) > 0:
+                for ii, typ in enumerate(['spine','shaft']):
+                    traces = self.metric_total_dic['roc_curve']['curve'][typ]
+
+                    figure.add_traces(
+                        traces,
+                        rows=[ii+1] * len(traces),
+                        cols=[1] * len(traces)
+                    )
+
+                    figure.add_trace(
+                        go.Scatter(
+                            x=[0, 1], y=[0, 1],
+                            mode="lines",
+                            name="",
+                            line=dict(color="gray", dash="dash")
+                        ),
+                        row=ii+1, col=1
+                    )
+
+                figure.update_layout(scene=self.scene)
+
+                figure.update_layout(
+                    title="ROC Curves",
+                    xaxis=dict(title="False Positive Rate"),
+                    xaxis2=dict(title="False Positive Rate"),
+                    yaxis=dict(title="True Positive Rate"),
+                    yaxis2=dict(title="True Positive Rate"),
+                    barmode="overlay"
+                )
+
+
+
+        elif mode in ['heatmap_iou','heatmap_iou_union','histogram_iou','roc_curve']: 
             spine_path_save=     self.path_file[f'result_{id_path}']
             metric_path=os.path.join( spine_path_save,f'iou_{true_keys}.csv') 
             if os.path.exists(metric_path):
@@ -966,7 +1357,26 @@ class app_param(get_files,get_app_param):
                         xaxis_title='Values',
                         yaxis_title='Iou'
                     )
- 
+
+
+
+                    # figure.add_annotation(
+                    #     text=f'Total Count Union.: {len(sze_checks_0)}',
+                    #     xref='paper',
+                    #     yref='paper',    
+                    #     x=0.98,
+                    #     y=0.88,
+                    #     showarrow=False,
+                    #     font=dict(size=22)
+                    # )
+
+                    # figure.update_layout(
+                    #     barmode='overlay',  
+                    #     title=mode,
+                    #     xaxis_title='Values',
+                    #     yaxis_title='Iou'
+                    # )
+
 
 
         elif mode in self.metric_mapping_combine['name']:  

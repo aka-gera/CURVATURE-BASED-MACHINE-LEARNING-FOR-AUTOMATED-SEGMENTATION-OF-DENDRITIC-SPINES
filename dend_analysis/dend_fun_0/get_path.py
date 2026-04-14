@@ -2,6 +2,7 @@
 import os
 import shutil
 import stat
+import pickle
 
 def remove_directory(path):
     for root, dirs, files in os.walk(path, topdown=False):
@@ -24,6 +25,7 @@ def assign_if_none(self, **kwargs):
  
 class get_name:
     def __init__(self): 
+        self.txt_vertices_old ='vertices_old.txt'
         self.txt_vertices_0 = 'vertices_0.txt'
         self.txt_vertices_1 = 'vertices_1.txt'
         self.txt_faces = 'faces_1.txt' 
@@ -120,6 +122,7 @@ class get_name:
         self.txt_shaft_faces = f'{self.name_shaft_faces}.txt'
         self.txt_shaft_index_unique = f'{self.name_shaft_index_unique}.txt'
         self.txt_shaft_vertices_center = f'{self.name_shaft}_vertices_center.txt'
+        
         self.txt_shaft_vertices_center_to_vertices_length = f'{self.name_shaft}_vertices_center_to_vertices_length.txt'
         self.txt_spine_count=f'{self.name_spine}_count.txt'
         self.txt_head_count=f'{self.name_head}_count.txt'
@@ -143,6 +146,7 @@ class get_name:
         self.name_head_vcv_length = f'{self.name_head}_{self.name_vcv_length}'
         self.name_neck_vcv_length = f'{self.name_neck}_{self.name_vcv_length}'
         self.txt_shaft_vcv_length = f'{self.name_shaft}_{self.name_vcv_length}.txt' 
+        self.txt_shaft_vcv_vertices_center = f'{self.name_shaft}_vcv_vertices_center.txt'
         self.txt_shaft_vcv_length_improved=f'shaft_vcv_length_improved.txt'
  
         self.txt_gauss_curv_init='gauss_curv_init.txt'
@@ -152,24 +156,27 @@ class get_name:
         self.txt_faces_class_faces='faces_class_faces.txt'
         self.txt_vertex_neighbor='vertex_neighbor.txt'
         self.txt_skl_distance='skl_distance.txt'
-        self.txt_skl_vectices='skl_vectices.txt'
+        self.txt_skl_vertices='skl_vertices.txt'
         self.txt_skl_index='skl_index.txt'
 
         self.txt_skl_distance_org='skl_distance_org.txt'
-        self.txt_skl_vectices_org='skl_vectices_org.txt'
+        self.txt_skl_vertices_org='skl_vertices_org.txt'
         self.txt_skl_index_org='skl_index_org.txt'
 
         self.txt_skl_distance_true='skl_distance_true.txt'
-        self.txt_skl_vectices_true='skl_vectices_true.txt'
+        self.txt_skl_vertices_true='skl_vertices_true.txt'
         self.txt_skl_index_true='skl_index_true.txt'
         
         
         self.txt_skl_distance_con='skl_distance_con.txt'
-        self.txt_skl_vectices_con='skl_vectices_con.txt'
+        self.txt_skl_vertices_con='skl_vertices_con.txt'
         self.txt_skl_index_con='skl_index_con.txt'
 
         self.txt_skl_shaft_distance='skl_shaft_distance.txt'
-        self.txt_skl_shaft_vectices='skl_shaft_vectices.txt'
+        self.txt_skl_shaft_vertices='skl_shaft_vertices.txt'
+
+        self.txt_skl_shaft_distance_org='skl_shaft_distance_org.txt'
+        self.txt_skl_shaft_vertices_org='skl_shaft_vertices_org.txt'
 
         self.txt_gauss_sq_curv_smooth='gauss_sq_curv_smooth.txt'
         self.txt_mean_sq_curv_smooth='mean_sq_curv_smooth.txt' 
@@ -194,10 +201,12 @@ class get_name:
         gfiindex=['ig','im','ig2','im2' ]
          
         self.kmean_list=[100,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16] # 6-21
-        gf2=[f'kmean_{rf}' for rf in self.kmean_list]
+        gf2=[f'kmean_smooth_{rf}' for rf in self.kmean_list]
         gfindex2=[f'k{rf}' for rf in self.kmean_list] 
-        gf22=[f'kmean_mean_{rf}' for rf in self.kmean_list]# 33-48
+        gf22=[f'kmean_init_{rf}' for rf in self.kmean_list]# 33-48
         gfindex22=[f'n{rf}' for rf in self.kmean_list] 
+        gffkk=['skl_shaft_distance', ]#,49
+        gffkkindex=['sklsh',]  #49
         gfg=[]
         gkg=[]
         gfg.extend(gf)
@@ -206,12 +215,14 @@ class get_name:
         gfg.extend(gfff)
         gfg.extend(gfi)
         gfg.extend(gf22)
+        gfg.extend(gffkk)
         gkg.extend(gfindex)
         gkg.extend(gfindex2)
         gkg.extend(gffindex)
         gkg.extend(gfffindex)
         gkg.extend(gfiindex)
         gkg.extend(gfindex22)
+        gkg.extend(gffkkindex)
         self.base_features_dict= {}
         for nam,nm in zip(gfg,gkg):
             self.base_features_dict[nam]={}
@@ -227,9 +238,9 @@ class get_name:
         for val in self.metrics_keys:
             self.metrics[val]={}
 
-        self.metrics_combine={'diam_head_neck_length':['head_diameter','neck_diameter','spine_length'],
-                              'vol_head_neck_spine':['head_vol','neck_vol','spine_vol'],
-                              'area_head_neck_spine':['head_area','neck_area','spine_area'],
+        self.metrics_combine={'diam_head_neck_length' :['head_diameter','neck_diameter','spine_length'],
+                              'vol_head_neck_spine'   :['head_vol','neck_vol','spine_vol'],
+                              'area_head_neck_spine'  :['head_area','neck_area','spine_area'],
                               'length_head_neck_spine':['head_length','neck_length','spine_length'],
                               }
 
@@ -241,6 +252,10 @@ class get_name:
         self.inten_file_model_spine_iou=['model_sp_iou'] 
         self.inten_file_model_train_spine_loss=['loss_spine']
         self.inten_file_model_spine_loss=['model_sp_loss']
+        self.inten_file_model_train_spine_auc=[ 'auc_spine_sh','auc_spine_sp' ]
+        self.inten_file_model_train_spine_dice=[ 'dice_spine_sh','dice_spine_sp' ]
+        self.inten_file_model_spine_auc=['model_sp_auc'] 
+        self.inten_file_model_spine_dice=['model_sp_dice'] 
 
         self.inten_file_model_train_iou=['iou_head_neck_hd','iou_head_neck_nk','iou_head_neck_sh' ]
         self.inten_file_model_head_neck_iou=['model_hn_iou'] 
@@ -249,26 +264,31 @@ class get_name:
  
         self.inten_file_model_train_shap=[ 'shap']
         self.inten_file_model_shap=['model_shap']
-
         self.inten_file_model_head_neck=[] 
         self.inten_file_model_head_neck.extend(self.inten_file_model_spine_iou)
         self.inten_file_model_head_neck.extend(self.inten_file_model_spine_loss)
+        self.inten_file_model_head_neck.extend(self.inten_file_model_spine_auc)
+        self.inten_file_model_head_neck.extend(self.inten_file_model_spine_dice)
         self.inten_file_model_head_neck.extend(self.inten_file_model_shap)
         self.inten_pca=['pca_1_norm','pca_2_norm','pca_3_norm','volume','area','energy','division',]
-        self.inten_file_sub=["path","spine_intensity",  "intensity_head_neck_segm",  'intensity_spines_segment','intensity_spines_segment_shaft',]
-        self.inten_file_sub_name=["path","Segmentation","Head Neck Segm.", 'intensity_spines_segment','intensity_spines_segment_shaft', ] 
+        # self.inten_file_sub=["path","spine_intensity",  "intensity_head_neck_segm",  'intensity_spines_segment','intensity_spines_segment_shaft','intensity_spines_logit_sh','intensity_spines_logit_sp','spine_annot','spine_match','spine_match_dice',]
+        # self.inten_file_sub_name=["path","Segmentation","Head Neck Segm.", 'intensity_spines_segment','intensity_spines_segment_shaft','intensity_spines_logit_sh','intensity_spines_logit_sp','spine_annot','spine_match','spine_match_dice', ] 
+        self.inten_file_sub=["path","spine_intensity",  "intensity_head_neck_segm",  'intensity_spines_segment','intensity_spines_segment_shaft','spine_annot','spine_match','spine_match_dice','shaft_vcv_length',]
+        self.inten_file_sub_name=["path","Segmentation","Head Neck Segm.", 'intensity_spines_segment','intensity_spines_segment_shaft', 'spine_annot','spine_match','spine_match_dice','length sh. skl. vert.', ] 
         self.inten_file=[] 
         self.inten_file_train=['skl_distance','skl_shaft_distance',  ]#'spine_shaft_length',  'skl Shaft Distance',  'Length sp. skl to sh. skl.',"gauss_curv_smooth",'Annotation','spine_annot',"mean_curv_smooth","gauss_curv_init","mean_curv_init","intensity_shaft_neck_head",'intensity_shaft_spine','intensity_1hot_shaft_spine', 'intensity_1hot_shaft_neck_head']
+ 
+        self.intensity_spines_logit=[f'intensity_spines_logit_{yuy}' for yuy in ['sh','sp']]
+        # self.inten_file_train=['skl_distance', 'Annotation','spine_annot','spine_match','spine_match_dice' ]
         self.dend_file=['vertices_head','vertices_neck','vertices_spine','faces_head','faces_neck','faces_spine', "vertices_1","vertices_0",'faces_0']  
         self.inttt=[]
         self.inttt.extend(self.inten_file_sub)  
         # self.inttt.extend(self.inten_pca)  
         self.inttt.extend(self.inten_file_model_head_neck)  
-        self.inttt.extend(self.inten_file_train)
+        self.inttt.extend(self.inten_file_train) 
+        self.inttt.extend(self.intensity_spines_logit)
         self.inttt.extend(gfg) 
-        self.path_file_sub={}
-        for ty in self.inttt:
-            self.path_file_sub[ty]={} 
+        # self.path_file_sub={ty for ty in self.inttt}  
         self.dropdown_options_style = {'color': 'white', 'background-color': 'gray'}
  
 
@@ -319,141 +339,223 @@ class get_model_name:
 
         self.inten_pinn_path=id_path
         # self.model_name=  '' if len(inten_pinn_index)==0 else '_'.join([self.inten_pinn[hh] for hh in self.inten_pinn])
-        self.model_name = '_'.join([self.inten_pinn_name[i] for i in inten_pinn_index])# if inten_pinn_index else ''
+        self.model_name = '_'.join([self.inten_pinn_name[i] for i in inten_pinn_index])# if inten_pinn_index else ''_{pre_portion[:2]}
         self.base_features_list=[list(self.base_features_dict.keys())[hhh] for hhh in base_features_index]
         self.dest_sufix = f"{pre_opt}_{''.join([self.base_features_dict[hh]['index'] for hh in self.base_features_list])}_{self.model_name}" if inten_pinn_index else f"{pre_opt}_{''.join([self.base_features_dict[hh]['index'] for hh in self.base_features_list])}"
         self.mode_id=f'{train_test}_{seg_dend}_{pre_portion[:2]}_{dest_head}_{self.dest_sufix}' 
-        self.dest_dir=f'{seg_dend}_{pre_portion[:2]}'  
+        self.dest_dir=f'{seg_dend}'  
 
 nh=24
 def get_configs():
     return {
+            "DNN-0": {
+                "pre_opt": "pre",
+                "base_features_index": [],
+                "inten_pinn_index": [],
+                "data_sufix": "DNN-0",
+                "dest_sufix": "DNN-0",
+            },
             "DNN-1": {
                 "pre_opt": "pre",
                 "base_features_index": [0,1,2,3],
-                "inten_pinn_index": []
+                "inten_pinn_index": [],
+                "data_sufix": "DNN-1",
+                "dest_sufix": "DNN-1",
             },
-            "mode1": {
+            "DNN-4": {
                 "pre_opt": "pre",
-                "base_features_index": [0,2,7,8,9,10,11,12,13,14,15],
-                "inten_pinn_index": []
-            },
-            "mode2": {
-                "pre_opt": "pre",
-                "base_features_index": [0,1,2,3,7,8,9,10,11,12,13,14,15],
-                "inten_pinn_index": []
-            },
-            "mode3": {
-                "pre_opt": "pre",
-                "base_features_index": [0,2,4,7,8,9,10,11,12,13,14,15],
-                "inten_pinn_index": []
-            },
-            "mode4": {
-                "pre_opt": "pre",
-                "base_features_index": [0,2,4,7,11,15],
-                "inten_pinn_index": []
-            },
-            "mode5": {
-                "pre_opt": "pre",
-                "base_features_index": [0,2,3,4,7,8,9,10,11,12,13,14,15],
-                "inten_pinn_index": []
-            },
-            "mode6": {
-                "pre_opt": "opt",
-                "base_features_index": [0,1,2,3],
-                "inten_pinn_index": [0]
-            },
-            "mode7": {
-                "pre_opt": "pre",
-                "base_features_index": [0,1,2,3,22],
-                "inten_pinn_index": []
+                "base_features_index": [0,1,2,3,49],
+                "inten_pinn_index": [],
+                "data_sufix": "DNN-4",
+                "dest_sufix": "DNN-4",
             },
             "DNN-2": {
                 "pre_opt": "opt",
                 "base_features_index": [0,1,2,3],
-                "inten_pinn_index": [1]
+                "inten_pinn_index": [1], 
+                # "inten_pinn_index": [0], 
+                "data_sufix": "DNN-1",
+                "dest_sufix": "DNN-2",
             },
-            "mode9": {
+            "DNN-5": {
                 "pre_opt": "opt",
-                "base_features_index": [0,2,7,8,9,10,11,12,13,14,15],
-                "inten_pinn_index": [1]
-            },
-            "mode10": {
-                "pre_opt": "pre",
-                "base_features_index": [0,2,3,7,8,9,10,11,12,13,14,15],
-                "inten_pinn_index": []
-            },
-            "mode11": {
-                "pre_opt": "pre",
-                "base_features_index": [23,24,25,26,27, 7,8,9,10,11,12,13,14,15],
-                "inten_pinn_index": []
-            },
-            "mode12": {
-                "pre_opt": "opt",
-                "base_features_index": [23,24,25,26,27 ],
-                "inten_pinn_index": [0]
-            },
-            "mode13": {
-                "pre_opt": "opt",
-                "base_features_index": [23,24,25,26,27, 7,8,9,10,11,12,13,14,15],
-                "inten_pinn_index": [0]
-            },
-            "mode14": {
-                "pre_opt": "pre",
-                "base_features_index": [23,24,25,26,27 ],
-                "inten_pinn_index": []
-            },
-            "mode15": {
-                "pre_opt": "opt",
-                "base_features_index": [0,2,7,8,9,10,11,12,13,14,15],
-                "inten_pinn_index": [0]
-            },
-            "mode16": {
-                "pre_opt": "pre",
-                "base_features_index": [1,23,24,25,26,27, 7,8,9,10,11,12,13,14,15],
-                "inten_pinn_index": [0]
-            },
-            "mode17": {
-                "pre_opt": "pre",
-                "base_features_index": [0,1,2,3,22],
-                "inten_pinn_index": []
-            },
-            "mode18": {
-                "pre_opt": "pre",
-                "base_features_index": [0,2,10,11,12,13,14,15],
-                "inten_pinn_index": []
-            },
-            "mode19": {
-                "pre_opt": "pre",
-                "base_features_index": [0,1,2,3,10,11,12,13,14,15],
-                "inten_pinn_index": []
-            },
-            "mode20": {
-                "pre_opt": "pre",
-                "base_features_index": [7,8,9,10,11,12,13,14,15],
-                "inten_pinn_index": []
-            },
-            "mode21": {
-                "pre_opt": "pre",
-                "base_features_index": [29,31,7,8,9,10,11,12,13,14,15],
-                "inten_pinn_index": []
-            },
-            "mode22": {
-                "pre_opt": "pre",
-                "base_features_index": [0,2,29,31,7,8,9,10,11,12,13,14,15],
-                "inten_pinn_index": []
-            },
-            "mode23": {
-                "pre_opt": "opt",
-                "base_features_index": [0,1,2,3,7,8,9,10,11,12,13,14,15],
-                "inten_pinn_index": [1]
+                "base_features_index": [0,1,2,3],
+               #  "inten_pinn_index": [1], 
+                "inten_pinn_index": [0], 
+                "data_sufix": "DNN-1",
+                "dest_sufix": "DNN-5",
             },
             "DNN-3": {
                 "pre_opt": "pre",
                 "base_features_index": [27+i for i in [0-27,2-27,7,8,9,10,11,12,13,14,15]],
-                "inten_pinn_index": []
+                "inten_pinn_index": [],
+                "data_sufix": "DNN-3",
+                "dest_sufix": "DNN-3",
             }, 
+            "DNN-6": {
+                "pre_opt": "pre",
+                "base_features_index": [0,2,7,8,9,10,11,12,13,14,15],
+                "inten_pinn_index": [],
+                "data_sufix": "DNN-6",
+                "dest_sufix": "DNN-6",
+            },
+            "mode2": {
+                "pre_opt": "pre",
+                "base_features_index": [0,1,2,3,7,8,9,10,11,12,13,14,15],
+                "inten_pinn_index": [],
+                "model_init": None,
+            },
+            "mode3": {
+                "pre_opt": "pre",
+                "base_features_index": [0,2,4,7,8,9,10,11,12,13,14,15],
+                "inten_pinn_index": [],
+                "model_init": None,
+            },
+            "mode4": {
+                "pre_opt": "pre",
+                "base_features_index": [0,2,4,7,11,15],
+                "inten_pinn_index": [],
+                "model_init": None,
+            },
+            "mode5": {
+                "pre_opt": "pre",
+                "base_features_index": [0,2,3,4,7,8,9,10,11,12,13,14,15],
+                "inten_pinn_index": [],
+                "model_init": None,
+            },
+            "mode6": {
+                "pre_opt": "opt",
+                "base_features_index": [0,1,2,3],
+                "inten_pinn_index": [0],
+                "model_init": None,
+            },
+            "mode7": {
+                "pre_opt": "pre",
+                "base_features_index": [0,1,2,3,22],
+                "inten_pinn_index": [],
+                "model_init": None,
+            },
+            "mode9": {
+                "pre_opt": "opt",
+                "base_features_index": [0,2,7,8,9,10,11,12,13,14,15],
+                "inten_pinn_index": [1],
+                "model_init": None,
+            },
+            "mode10": {
+                "pre_opt": "pre",
+                "base_features_index": [0,2,3,7,8,9,10,11,12,13,14,15],
+                "inten_pinn_index": [],
+                "model_init": None,
+            },
+            "mode11": {
+                "pre_opt": "pre",
+                "base_features_index": [23,24,25,26,27, 7,8,9,10,11,12,13,14,15],
+                "inten_pinn_index": [],
+                "model_init": None,
+            },
+            "mode12": {
+                "pre_opt": "opt",
+                "base_features_index": [23,24,25,26,27 ],
+                "inten_pinn_index": [0],
+                "model_init": None,
+            },
+            "mode13": {
+                "pre_opt": "opt",
+                "base_features_index": [23,24,25,26,27, 7,8,9,10,11,12,13,14,15],
+                "inten_pinn_index": [0],
+                "model_init": None,
+            },
+            "mode14": {
+                "pre_opt": "pre",
+                "base_features_index": [23,24,25,26,27 ],
+                "inten_pinn_index": [],
+                "model_init": None,
+            },
+            "mode15": {
+                "pre_opt": "opt",
+                "base_features_index": [0,2,7,8,9,10,11,12,13,14,15],
+                "inten_pinn_index": [0],
+                "model_init": None,
+            },
+            "mode16": {
+                "pre_opt": "pre",
+                "base_features_index": [1,23,24,25,26,27, 7,8,9,10,11,12,13,14,15],
+                "inten_pinn_index": [0],
+                "model_init": None,
+            },
+            "mode17": {
+                "pre_opt": "pre",
+                "base_features_index": [0,1,2,3,22],
+                "inten_pinn_index": [],
+                "model_init": None,
+            },
+            "mode18": {
+                "pre_opt": "pre",
+                "base_features_index": [0,2,10,11,12,13,14,15],
+                "inten_pinn_index": [],
+                "model_init": None,
+            },
+            "mode19": {
+                "pre_opt": "pre",
+                "base_features_index": [0,1,2,3,10,11,12,13,14,15],
+                "inten_pinn_index": [],
+                "model_init": None,
+            },
+            "mode20": {
+                "pre_opt": "pre",
+                "base_features_index": [7,8,9,10,11,12,13,14,15],
+                "inten_pinn_index": [],
+                "model_init": None,
+            },
+            "mode21": {
+                "pre_opt": "pre",
+                "base_features_index": [29,31,7,8,9,10,11,12,13,14,15],
+                "inten_pinn_index": [],
+                "model_init": None,
+            },
+            "mode22": {
+                "pre_opt": "pre",
+                "base_features_index": [0,2,29,31,7,8,9,10,11,12,13,14,15],
+                "inten_pinn_index": [],
+                "model_init": None,
+            },
+            "mode23": {
+                "pre_opt": "opt",
+                "base_features_index": [0,1,2,3,7,8,9,10,11,12,13,14,15],
+                "inten_pinn_index": [1],
+                "model_init": None,
+            },
         }
+
+# def drop_part(s, sep="_", index=1, name=None):
+#     parts = s.split(sep) 
+#     namme=[name] if name is None else name.split(sep)
+#     if name is not None:
+#         for nam in namme:
+#             if nam in parts:
+#                 parts.remove(nam)
+#             return sep.join(parts) 
+#     if index < 0 or index >= len(parts):
+#         return s
+
+#     return sep.join(parts[:index] + parts[index+1:])
+
+def drop_part(s, sep="_", index=1, name=None): 
+    parts = s.split(sep)
+ 
+    # print('==============---------111224455100',)
+    if name is not None: 
+        if isinstance(name, str):
+            names = name.split(sep) if sep in name else [name]
+        else: 
+            names = list(name) 
+        parts = [p for p in parts if p not in names]
+        # print('==============---------',parts)
+        return sep.join(parts) 
+    if index < 0 or index >= len(parts):
+        return s 
+    return sep.join(parts[:index] + parts[index+1:])
+
 
 
 class get_param:
@@ -591,22 +693,28 @@ class get_files(get_name,get_param):
                     pre_portion=None,
                     pinn_dir_data=None,
                     path_file=None,  
+                    path_file_sub=None,
                     pinn_dir_data_all=None,
                     model_sufix_all=None, 
                     list_features=None,
                     base_features_list=None,
+                    model_init=None,
                     metrics={},
                     model_type=None,
                     data_mode=None,
-                    path_heads=None,
+                    path_heads=None, 
                     true_keys=None,
                     thre_target_number_of_triangles=None,
                     voxel_resolution=None,
                     obj_org_path=None,
                     obj_org_path_dict=None,
                     model_sufix_dic=None,
-        ) : 
-        print('get_file',thre_target_number_of_triangles)
+                    path_display_dic=None,
+                    path_file_dir=None, 
+                        kmean_n_run=None,
+                        kmean_max_iter=None,
+                        param_dic=None,
+        ) :  
         get_name.__init__(self)  
         get_param.__init__(self,
                          txt_save=txt_save,
@@ -637,7 +745,7 @@ class get_files(get_name,get_param):
                         ) 
 
 
-
+        self.path_file_dir=path_file_dir
         self.thre_target_number_of_triangles=thre_target_number_of_triangles
         self.voxel_resolution=voxel_resolution
         self.model_type=model_type
@@ -656,6 +764,10 @@ class get_files(get_name,get_param):
         self.dend_namess=dend_namess  
         self.dend_path_inits=dend_path_inits 
         self.dend_data=dend_data  
+        self.kmean_n_run=kmean_n_run
+        self.param_dic=param_dic
+
+        self.kmean_max_iter=kmean_max_iter
         if dend_data is not None:
             self.dend_names=dend_names if dend_names is not None else dend_data['dend_names']
             self.dend_namess=dend_namess if dend_namess is not None else dend_data['dend_namess']
@@ -679,6 +791,7 @@ class get_files(get_name,get_param):
             self.pinn_dir_data=pinn_dir_data if pinn_dir_data is not None else data_mode['pinn_dir_data']
             self.list_features=list_features if list_features is not None else data_mode['list_features']
             self.base_features_list=base_features_list if base_features_list is not None else data_mode['base_features_list']
+            self.model_init=model_init if model_init is not None else data_mode['model_init']
         
         self.data_studied=data_studied
         self.txt_true_file=txt_true_file
@@ -686,19 +799,28 @@ class get_files(get_name,get_param):
         self.data_mode=data_mode
         self.obj_org_path=obj_org_path or self.obj_org_path
         self.obj_org_path_dict=obj_org_path_dict or self.obj_org_path_dict
-        self.model_sufix_dic=model_sufix_dic
+        self.model_sufix_dic=model_sufix_dic 
+        self.path_dir=self.model_sufix_dic.get('path_dir',None) 
+        self.path_display_dic=path_display_dic
         # self.file_path_model=self.file_path_save =os.path.join(file_path_org,'pinn')
         # os.makedirs(self.file_path_model, exist_ok=True) 
-        self.file_path_model_data= os.path.join(file_path_org,'data')
-        os.makedirs(self.file_path_model_data, exist_ok=True) 
- 
+        # print('[[[[[[]]]]]]',self.file_path_org,file_path_org)
+        self.file_diff=os.path.relpath(self.obj_org_path, os.path.dirname(self.file_path_org)) 
+        self.file_path_model_data= os.path.join(file_path_org,'data',self.file_diff)
+        os.makedirs(self.file_path_model_data, exist_ok=True)  
+
 
         self.pkl_path_model_data = os.path.join(self.file_path_model_data,fr'dend_{self.data_studied}_data.pkl')
-        self.dash_pages_path=os.path.join(file_path_org,'app','pages')
-  
-        pass
+        self.dash_pages_path=os.path.join(file_path_org,'app','pages') 
+   
 
 
+        self.path_file={} if path_file is None else path_file   
+        # print('[[[[[[[[]]]]]]]]',None if path_file_sub is None else path_file_sub.keys())
+        self.path_file_sub ={mm:{} for mm in  self.inttt} if path_file_sub is None else path_file_sub
+        # self.path_file={}    
+        # self.path_file_sub ={mm:{} for mm in  self.inttt} 
+            
         self.metrics=metrics
         for val in self.metrics_keys:
             self.metrics[val]={} 
@@ -710,26 +832,29 @@ class get_files(get_name,get_param):
         for intt in self.true_keys:
             self.dropdown_true_keys_option.append({'label': intt,          'value': intt,           'style': self.dropdown_options_style})   
 
- 
+
+        self.path_heads_show=self.model_sufix_dic.get('path_heads_show',None) 
+        self.path_heads_show = self.path_heads_show if self.path_heads_show is not None else path_heads
         self.dropdown_path_head_option = []
-        for nam in self.path_heads:
-            self.dropdown_path_head_option.append({'label': nam.upper(), 'value': nam, 'style': self.dropdown_options_style})
+        for nam in self.path_heads_show:
+            self.dropdown_path_head_option.append({'label': self.model_sufix_dic['path_heads_dic'][nam], 'value': nam, 'style': self.dropdown_options_style})
         self.dropdown_path_head_option.append({'label': f'Annotation',   'value': 'true', 'style': self.dropdown_options_style})
 
         self.dropdown_model_suf_option=[]
-        for intt in self.model_sufix_all:
-            self.dropdown_model_suf_option.append({'label': self.model_sufix_dic[intt],          'value': intt,           'style': self.dropdown_options_style})   
+        for intt in self.model_sufix_dic['model_sufix_show']:
+            # if intt in list(self.model_sufix_dic['model_sufix_dic'].keys()):
+                # print('[[[[[[[[[[]]]]]]]]]]',self.model_sufix_dic['model_sufix_dic'])
+                self.dropdown_model_suf_option.append({'label': self.model_sufix_dic['model_sufix_dic'][intt],          'value': intt,           'style': self.dropdown_options_style})   
 
- 
+  
+        self.dropdown_path_option=[]
+        for intt in self.model_sufix_dic['path_dirs_show']:
+            self.dropdown_path_option.append({'label': intt,          'value': intt,           'style': self.dropdown_options_style})   
+
 
         # self.dropdown_path_option=[]
-        # for intt in self.pinn_dir_data_all:
+        # for intt in ['save',]:
         #     self.dropdown_path_option.append({'label': intt,          'value': intt,           'style': self.dropdown_options_style})   
-
-
-        self.dropdown_path_option=[]
-        for intt in ['save',]:
-            self.dropdown_path_option.append({'label': intt,          'value': intt,           'style': self.dropdown_options_style})   
 
 
 
@@ -755,7 +880,7 @@ class get_files(get_name,get_param):
 
   
         if file_path_model is None:
-            file_path_model = os.path.join(file_path_org , 'model',model_type,model_sufix )
+            file_path_model = os.path.join(file_path_org , 'model',model_type,model_sufix ) 
             os.makedirs(file_path_model, exist_ok=True)
         self.file_path_model = file_path_model
 
@@ -764,9 +889,14 @@ class get_files(get_name,get_param):
 
         self.shap_dir = os.path.join(self.file_path_model, 'shap.csv')
         self.df_metric_algorithms_dir = os.path.join(self.file_path_model, 'df_metric_algorithms.csv')
+        
+        mo = 'pkl' if model_type == 'ML' else 'pth' if model_type.endswith('cnn') else 'keras'
 
-        mo='pkl' if model_type=='ML' else 'keras'
         self.model_save_dir = os.path.join(self.file_path_model, f'model.{mo}')
+        self.model_save_dir_dice = os.path.join(self.file_path_model, f'model_dice.{mo}')
+        self.model_save_dir_iou = os.path.join(self.file_path_model, f'model_iou.{mo}')
+        self.model_save_dir_auc = os.path.join(self.file_path_model, f'model_auc.{mo}')
+        self.model_save_dir_loss = os.path.join(self.file_path_model, f'model_loss.{mo}')
         self.model_spine_save_dir = os.path.join(self.file_path_model, f'model_spine.{mo}')
         self.model_shaft_save_dir = os.path.join(self.file_path_model, f'model_shaft.{mo}')
         self.model_head_neck_save_dir = os.path.join(self.file_path_model, f'model_head_neck.{mo}')
@@ -776,11 +906,17 @@ class get_files(get_name,get_param):
         self.shaft_pred_dir = os.path.join(self.file_path_model, 'shaft.pkl')
         self.loss_save_dir  = os.path.join(self.file_path_model, 'loss.txt')
         self.iou_save_dir   = os.path.join(self.file_path_model, 'iou.txt')
+        self.auc_save_dir   = os.path.join(self.file_path_model, 'auc.txt')
+        self.dice_save_dir   = os.path.join(self.file_path_model, 'dice.txt')
         self.index_save_dir  = os.path.join(self.file_path_model, 'index.txt') 
 
         self.loss_spine_save_dir  = os.path.join(self.file_path_model, 'loss_spine.txt') 
         self.iou_spine_sp_save_dir   = os.path.join(self.file_path_model, 'iou_spine_sp.txt')
         self.iou_spine_sh_save_dir   = os.path.join(self.file_path_model, 'iou_spine_sh.txt')
+        self.auc_spine_sp_save_dir  = os.path.join(self.file_path_model, 'auc_spine_sp.txt') 
+        self.auc_spine_sh_save_dir  = os.path.join(self.file_path_model, 'auc_spine_sh.txt') 
+        self.dice_spine_sp_save_dir  = os.path.join(self.file_path_model, 'dice_spine_sp.txt') 
+        self.dice_spine_sh_save_dir  = os.path.join(self.file_path_model, 'dice_spine_sh.txt') 
         self.index_spine_save_dir  = os.path.join(self.file_path_model, 'index_spine.txt') 
 
         self.loss_shaft_save_dir  = os.path.join(self.file_path_model, 'loss_shaft.txt') 
@@ -790,6 +926,15 @@ class get_files(get_name,get_param):
         self.iou_head_neck_hd_save_dir   = os.path.join(self.file_path_model, 'iou_head_neck_hd.txt')
         self.iou_head_neck_nk_save_dir   = os.path.join(self.file_path_model, 'iou_head_neck_nk.txt')
         self.iou_head_neck_sh_save_dir   = os.path.join(self.file_path_model, 'iou_head_neck_sh.txt')
+        
+        self.auc_head_neck_hd_save_dir   = os.path.join(self.file_path_model, 'auc_head_neck_hd.txt')
+        self.auc_head_neck_nk_save_dir   = os.path.join(self.file_path_model, 'auc_head_neck_nk.txt')
+        self.auc_head_neck_sh_save_dir   = os.path.join(self.file_path_model, 'auc_head_neck_sh.txt')
+
+        self.dice_head_neck_hd_save_dir   = os.path.join(self.file_path_model, 'dice_head_neck_hd.txt')
+        self.dice_head_neck_nk_save_dir   = os.path.join(self.file_path_model, 'dice_head_neck_nk.txt')
+        self.dice_head_neck_sh_save_dir   = os.path.join(self.file_path_model, 'dice_head_neck_sh.txt')
+
         self.index_head_neck_save_dir  = os.path.join(self.file_path_model, 'index_head_neck.txt') 
                 
                 
@@ -800,8 +945,20 @@ class get_files(get_name,get_param):
                         1:self.iou_spine_sp_save_dir,
                         0:self.iou_spine_sh_save_dir,
                        } , 
+                'auc':{
+                        1:self.auc_spine_sp_save_dir,
+                        0:self.auc_spine_sh_save_dir,
+                       } , 
+                'dice':{
+                        1:self.dice_spine_sp_save_dir,
+                        0:self.dice_spine_sh_save_dir,
+                       } , 
                 'index_save': self.index_spine_save_dir, 
                 'model': self.model_spine_save_dir,
+                'model_iou': self.model_save_dir_iou,
+                'model_dice': self.model_save_dir_dice,
+                'model_auc': self.model_save_dir_auc,
+                'model_loss': self.model_save_dir_loss,
                 'rhs_name':['shaft_pre_sp','spine_pre_sp'],
             },
             'head_neck': {
@@ -811,8 +968,22 @@ class get_files(get_name,get_param):
                         1: self.iou_head_neck_nk_save_dir,
                         0: self.iou_head_neck_sh_save_dir, 
                         },
+                'auc':{
+                        2: self.auc_head_neck_hd_save_dir,
+                        1: self.auc_head_neck_nk_save_dir,
+                        0: self.auc_head_neck_sh_save_dir, 
+                        },
+                'dice':{
+                        2: self.dice_head_neck_hd_save_dir,
+                        1: self.dice_head_neck_nk_save_dir,
+                        0: self.dice_head_neck_sh_save_dir, 
+                        },
                 'index_save': self.index_head_neck_save_dir, 
                 'model': self.model_head_neck_save_dir,
+                'model_iou': self.model_save_dir_iou,
+                'model_dice': self.model_save_dir_dice,
+                'model_auc': self.model_save_dir_auc,
+                'model_loss': self.model_save_dir_loss,
                 'rhs_name':['shaft_pre','neck_pre','head_pre'],
             },
             'shaft': {
@@ -823,30 +994,49 @@ class get_files(get_name,get_param):
             'default': {
                 'loss': self.loss_save_dir,
                 'iou': self.iou_save_dir,
+                'auc': self.auc_save_dir,
+                'dice': self.dice_save_dir,
                 'model': self.model_save_dir,
+                'model_iou': self.model_save_dir_iou,
+                'model_dice': self.model_save_dir_dice,
+                'model_auc': self.model_save_dir_auc,
+                'model_loss': self.model_save_dir_loss,
                 'rhs_name':['spine_pre'],
             }
         }
   
 
-    def get_path(self, *names, name='pinn'):
-        base = os.path.join(self.dend_path, name)
-        
+    def get_path(self, *names, name='pinn',
+                 dend_path=None,
+                 file_path_model_data=None,
+                 dend_path_true=None,
+                 file_path_org=None,
+                file_path=None,
+                file_path_feat=None, 
+                dend_path_true_final=None,
+                 ):
+        dend_path=dend_path if dend_path is not None else self.dend_path
+        file_path_model_data =file_path_model_data if file_path_model_data is not None else self.file_path_model_data
+        dend_path_true=dend_path_true if dend_path_true is not None else self.dend_path_true
+        base = os.path.join(dend_path, name)
+
         if name.startswith( 'pinn'):
             if names:
                 base = os.path.join(base, f'{names[0]}', *names[1:])
             else:
                 base = os.path.join(base, f'{self.name_path_fin}')
         elif name == 'result':
-            base = os.path.join(self.file_path_org, 'data',)
+            base = file_path_model_data#os.path.join(self.file_path_org, 'data',self.file_diff)
             if names: 
                 if names[0]=='true': 
-                    base = os.path.join(base,self.dend_path_inits[0],  name, f'{names[0]}')  
+                    base = os.path.join(base, name, f'{names[0]}') 
+                    # base = os.path.join(base,self.dend_path_inits[0],  name, f'{names[0]}') 
                 else:  
-                    base = os.path.join(base,self.dend_path_inits[0],  name, f'{names[0]}',    *names[1:])  
+                    base = os.path.join(base,  name, f'{names[0]}',    *names[1:])  
+                    # base = os.path.join(base,self.dend_path_inits[0],  name, f'{names[0]}',    *names[1:]) 
 
         elif name.startswith('true'): 
-            base = os.path.join(self.dend_path_org, name) 
+            base = os.path.join( dend_path_true, name) 
         elif name.startswith('resized'): 
             base = os.path.join(self.dend_path_resized, names[0])
         else:
@@ -858,9 +1048,22 @@ class get_files(get_name,get_param):
         return base
     
 
-    def get_paths(self, names,name=None ):
+    def get_paths(self, names,name=None,
+                 dend_path=None,
+                 file_path_model_data=None,
+                 dend_path_true=None,
+                  file_path_org=None,
+                file_path=None,
+                file_path_feat=None,
+                 dend_path_true_final=None, ):
         name=name if name is not None else names[0]
-        return self.get_path(*names[1:],name=name)
+        return self.get_path(*names[1:],name=name,
+                 dend_path=dend_path,
+                 file_path_model_data=file_path_model_data,
+                 dend_path_true=dend_path_true,
+                 file_path_org=file_path_org,
+                            file_path=file_path,
+                            file_path_feat=file_path_feat,)
  
 
 
@@ -880,10 +1083,21 @@ class get_files(get_name,get_param):
                         path_heads =None,
                         model_type=None,
                         obj_org_path=None,
+                        entry_name=None,
+                        exit_name=None,
+                        path_file_dir=None,
+                        data_org='data_org', 
+                        wrap_part='shaft_wrap',
+                        dict_dend_path='current',
+                        drop_dic_name=None, 
+                        old_path=None,
+                        nam_gen=None,
+
 
         ):  
+        path_file_dir=path_file_dir if path_file_dir is not None else self.path_file_dir
         obj_org_path = obj_org_path or self.obj_org_path
-        self.obj_org_path=obj_org_path
+        self.obj_org_path=obj_org_path 
 
         model_type=model_type or self.model_type
         if file_path_org is None:
@@ -898,42 +1112,134 @@ class get_files(get_name,get_param):
         self.data_studied = data_studied or self.data_studied
         name_path_fin_save = name_path_fin_save or self.name_path_fin_save
         pinn_dir_data=pinn_dir_data or self.pinn_dir_data
- 
+        # print('[[[[[]]]]]',index,dend_path_inits)
         self.dend_path_init =dend_path_inits[index]
         # Assigning to self
-        self.file_path_org_init= os.path.join(file_path_org, 'data', self.dend_path_init,'data')
+        # self.file_path_org_init= os.path.join(self.file_path_model_data, self.dend_path_init,path_dir)
+        self.file_path_org_init= os.path.join(self.file_path_model_data,'data' )
+        self.file_path_org_true=os.path.join(self.file_path_model_data,'true' )
+        self.file_path_org_temp=os.path.join(self.file_path_model_data,'temp' )
         self.name_path_fin = name_path_fin
         self.name_path_fin_save = name_path_fin_save
 
-        
+
+        self.dend_name = f'{dend_names[index]}' 
         self.last_name,self.sp_name_shaft=dend_namess[index][0],dend_namess[index][1]  
  
-        self.dend_name = f'{dend_names[index]}' 
-
-
-        print('self.obj_org_path, self.dend_name',self.obj_org_path, self.file_path_org_init,self.dend_name)
-        self.dend_path_original =self.dend_path_original_m = os.path.join(self.file_path_org_init, self.dend_name, 'data_org') 
-        self.dend_path_original_new = os.path.join(self.obj_org_path, self.dend_name, 'data_org')  
-        self.dend_path_original_new_smooth = os.path.join(self.obj_org_path, self.dend_name, 'data_smooth')  
+        # print('self.obj_org_path, self.dend_name',self.obj_org_path, self.file_path_org_init,self.dend_name)
+        self.dend_path_original =self.dend_path_original_m = os.path.join(self.file_path_org_init, self.dend_name, data_org) 
+        self.dend_path_original_new = os.path.join(self.obj_org_path, self.dend_name, data_org)   
         self.dend_path_org_new = os.path.join(self.obj_org_path, self.dend_name, 'data')   
-        os.makedirs(self.dend_path_original_new_smooth, exist_ok=True)
+        self.dend_path_original_new_smooth = os.path.join(self.obj_org_path, self.dend_name, 'data_smooth') 
+        # os.makedirs(self.dend_path_original_new_smooth, exist_ok=True)
 
+ 
+        drop_dic=  self.model_sufix_dic['drop_dic'] 
+        # print('[[[[[[[[[[00]]]]]]]]]]',drop_dic)
+        if (drop_dic is None) or (len(drop_dic)==0):
+            drop_dic=dict(index=1,sep="_", name='smooth' )
+        drop_dic['name']=drop_dic['name'] if drop_dic_name is None else drop_dic_name
+        self.drop_dic=drop_dic
+        diffo = self.file_diff.split('/')
+        difff = drop_part(diffo[1], **self.drop_dic) 
+        diffo[1] = difff 
+        self.file_diff_smooth =self.file_diff= '/'.join(diffo)
+        if nam_gen is not None:
+            self.file_diff_smooth =self.file_diff= '/'.join([nam_gen,drop_dic_name])
 
-
-
-
-        self.dend_path_org_resized=os.path.join(f'{self.obj_org_path}_resized', self.dend_name, 'data_org')
-        self.dend_path_org_smooth_resized=os.path.join(f'{self.obj_org_path}_resized', self.dend_name, 'data_smooth')      
+        # print('[[[[[[[[[[[[[[[[[[[[nam  gen]]]]]]]]]]]]]]]]]]]]',nam_gen)
 
         self.dend_path_org=self.dend_path = os.path.join(self.file_path_org_init, self.dend_name )
-        self.dend_path_resized = os.path.join(file_path_org, 'data', f'{self.dend_path_init}_resized','data',f'{self.dend_name}')
+        # self.dend_path_temp=  os.path.join(self.file_path_org_temp, self.dend_name )
+        self.file_path= os.path.join(self.file_path_org_temp, self.dend_name )
+        # self.dend_path_resized = os.path.join(self.file_path_model_data, f'{self.dend_path_init}_resized','data',f'{self.dend_name}')
         os.makedirs(self.dend_path, exist_ok=True)
-        self.file_path = os.path.join(self.dend_path, 'data')
+        # self.file_path = os.path.join(self.dend_path_temp, 'data')
         os.makedirs(self.file_path, exist_ok=True)
 
         
-        self.file_path_resized= os.path.join(self.dend_path_resized, 'data' )  
-        self.file_path_feat_resized= os.path.join(self.file_path_resized, 'feat' ) 
+        # self.dend_path_org_resized=os.path.join(f'{self.obj_org_path}_resized', self.dend_name, 'data_org')
+        # self.dend_path_org_smooth_resized=os.path.join(f'{self.obj_org_path}_resized', self.dend_name, 'data_smooth') 
+        # self.dend_path_resized = os.path.join(f'{self.file_path_model_data}_resized','data',f'{self.dend_name}')
+        # self.file_path_resized= os.path.join(self.dend_path_resized, 'data' )  
+        # self.file_path_feat_resized= os.path.join(self.file_path_resized, 'feat' ) 
+        # self.dend_path_org_smooth_resized=os.path.join(f'{self.obj_org_path}_resized', self.dend_name, 'data_smooth') 
+
+
+
+        # if entry_name is not None:
+        #     self.obj_org_path_entry=f'{self.obj_org_path}_{entry_name}'
+        #     self.dend_path_org_entry=os.path.join(f'{self.obj_org_path}_{entry_name}', self.dend_name, 'data_org')
+        #     self.dend_path_entry = os.path.join(f'{self.file_path_model_data}_{entry_name}','data',f'{self.dend_name}')
+        #     self.file_path_entry= os.path.join(self.dend_path_entry, 'data' )  
+        #     self.file_path_feat_entry= os.path.join(self.file_path_entry, 'feat' ) 
+ 
+
+        self.obj_org_path_entry=self.obj_org_path if entry_name is None else f'{self.obj_org_path}_{entry_name}'
+        self.file_path_model_data_entry=self.file_path_model_data if entry_name is None else f'{self.file_path_model_data}_{entry_name}'
+        self.dend_path_org_entry=os.path.join(self.obj_org_path_entry, self.dend_name, data_org)
+        self.dend_path_entry = os.path.join(self.file_path_model_data_entry,'data',f'{self.dend_name}')
+        self.file_path_entry= os.path.join(self.file_path_model_data_entry,'temp',f'{self.dend_name}')
+        # self.file_path_temp_entry= os.path.join(self.dend_path_temp_entry, 'data' )  
+        self.file_path_feat_entry= os.path.join(self.file_path_entry, 'feat' ) 
+
+        
+
+        self.obj_org_path_exit=self.obj_org_path if exit_name is None else f'{self.obj_org_path}_{exit_name}'
+        self.file_path_model_data_exit=self.file_path_model_data if exit_name is None else f'{self.file_path_model_data}_{exit_name}'
+        self.dend_path_org_exit=os.path.join(self.obj_org_path_exit, self.dend_name, data_org)
+        self.dend_path_exit = os.path.join(self.file_path_model_data_exit,'data',f'{self.dend_name}')
+        # self.file_path_exit= os.path.join(self.dend_path_exit, 'data' )  
+        # self.file_path_feat_exit= os.path.join(self.file_path_exit, 'feat' ) 
+        self.file_path_exit = os.path.join(self.file_path_model_data_exit,'temp',f'{self.dend_name}') 
+        self.file_path_feat_exit= os.path.join(self.file_path_exit, 'feat' ) 
+
+
+        self.file_path_org_true=os.path.join(self.file_path_model_data,'true' )
+        self.dend_path_true = os.path.join(self.file_path_org_true,f'{self.dend_name}')
+        self.file_path_org_true_exit =self.file_path_org_true if exit_name is None else os.path.join(f'{self.file_path_model_data}_{exit_name}','true')
+        self.file_path_org_true_entry=self.file_path_org_true if exit_name is None else os.path.join(f'{self.file_path_model_data}_{entry_name}','true')
+        self.dend_path_true_exit  = os.path.join(self.file_path_org_true_exit,f'{self.dend_name}')
+        self.dend_path_true_entry = os.path.join(self.file_path_org_true_entry,f'{self.dend_name}')
+
+
+
+        self.obj_org_path_old=os.path.join(os.path.dirname(os.path.dirname(self.obj_org_path)),self.file_diff_smooth)
+        self.file_path_model_data_old=os.path.join(os.path.dirname(os.path.dirname(self.file_path_model_data)),self.file_diff_smooth)
+        # if old_path =='entry':
+        #     self.obj_org_path_old=self.obj_org_path_entry
+        #     self.file_path_model_data_old=self.file_path_model_data_entry
+        # elif old_path =='current':
+        #     self.obj_org_path_old=self.obj_org_path
+        #     self.file_path_model_data_old=self.file_path_model_data
+        # elif old_path =='exit':
+        #     self.obj_org_path_old=self.obj_org_path_exit
+        #     self.file_path_model_data_old=self.file_path_model_data_exit
+        #     print('((((((((((((((((((((((((((((((()))))))))))))))))))))))))))))))')
+        if old_path is not None:
+            if old_path=='current':
+                self.obj_org_path_old=f'{self.obj_org_path}'
+                self.file_path_model_data_old=f'{self.file_path_model_data}'
+            else:
+                self.obj_org_path_old=f'{self.obj_org_path}_{old_path}'
+                self.file_path_model_data_old=f'{self.file_path_model_data}_{old_path}'
+
+        # print('[[[[[[[[[[[[[[[[[[diff_smooth]]]]]]]]]]]]]]]]]]',self.file_diff_smooth)
+        # print('[[[[[[[[[[[[[[[[[[obj_org_path_old]]]]]]]]]]]]]]]]]]',self.obj_org_path_old)
+        # print('[[[[[[[[[[[[[[[[[[file_path_model_data_old]]]]]]]]]]]]]]]]]]',self.file_path_model_data_old)
+        # print('((((((((((((((((()))))))))))))))))))))',drop_dic_name,self.file_diff_smooth)
+        # print('[[[[[[[[[self.obj_org_path]]]]]]]]]======',self.obj_org_path_entry)
+        # print('[[[[[[[[[self.obj_org_path_old]]]]]]]]]======',self.obj_org_path_old) 
+        self.dend_path_org_old=os.path.join(self.obj_org_path_old, self.dend_name, data_org) 
+        self.dend_path_old = os.path.join(self.file_path_model_data_old,'data',f'{self.dend_name}')
+        # self.file_path_old= os.path.join(self.dend_path_old, 'data' )  
+        # self.file_path_feat_old= os.path.join(self.file_path_old, 'feat' ) 
+        self.file_path_old= os.path.join(self.file_path_model_data_old,'temp',f'{self.dend_name}') 
+        self.file_path_feat_old= os.path.join(self.file_path_old, 'feat' ) 
+        self.file_path_org_old_true=os.path.join(self.file_path_model_data_old,'true' )
+        self.dend_path_true_old = os.path.join(self.file_path_org_old_true,f'{self.dend_name}')
+
+
         self.file_path_feat = os.path.join(self.file_path, 'feat')
         os.makedirs(self.file_path_feat, exist_ok=True)
  
@@ -943,26 +1249,74 @@ class get_files(get_name,get_param):
         self.dend_first_name=self.dend_namess[index][1]
   
 
+        self.dict_dend={va:{
+            la:{} for la in ['current','old','entry','exit']
+        } for va in ['path','key', ]
+        }
+        self.dict_dend['path']['current']=dict(dend_path=self.dend_path,
+                    file_path_model_data=self.file_path_model_data,
+                    dend_path_true=self.dend_path_true,
+                    file_path_org=self.file_path_org,
+                    file_path=self.file_path,
+                    file_path_feat=self.file_path_feat, 
+                            )
+        self.dict_dend['path']['old']=dict(dend_path=self.dend_path_old,
+                    file_path_model_data=self.file_path_model_data_old,
+                    dend_path_true=self.dend_path_true_old , 
+                    file_path_feat=self.file_path_feat_old,
+                    file_path=self.file_path_old,  
+                    )
+        # pinn_dir_data_all= pinn_dir_data_all or self.pinn_dir_data_all 
+        # pinn_dir_data_all=list(self.model_sufix_dic['path_dirs'].keys())
+        # model_sufix_all= model_sufix_all or self.model_sufix_all 
 
-        self.path_file={} 
- 
-        pinn_dir_data_all= pinn_dir_data_all or self.pinn_dir_data_all 
-        model_sufix_all= model_sufix_all or self.model_sufix_all 
-        path_heads = path_heads or self.path_heads
-        path_headss=path_heads
+        path_heads=self.model_sufix_dic['path_heads_show'] 
+        model_sufix_all=self.model_sufix_dic['model_sufix_show'] 
+        pinn_dir_data_all=self.model_sufix_dic['path_dirs_show']
+
+        # path_heads = path_heads or self.path_heads
+        path_headss=list(path_heads)
         path_headss.append('true') 
+        if (path_file_dir is not None) :
+            if path_file_dir is not None:
+                with open(path_file_dir, "rb") as f: 
+                    loaded_dict = pickle.load(f) 
+                self.path_file_dir=loaded_dict['path_file_dir']
+                self.path_train=loaded_dict['path_train']
+                self.path_file=loaded_dict['path_file']
+                self.path_file_sub=loaded_dict['path_file_sub']
+                self.pinn_dir_data=loaded_dict['pinn_dir_data']
+                # self.dend_data=dend_data=loaded_dict['dend_data']
+                self.obj_org_path_dict=loaded_dict['obj_org_path_dict']
+                self.model_sufix_dic=loaded_dict['model_sufix_dic']
+                self.path_display=loaded_dict['path_display']
+                self.path_display_dic=loaded_dict['path_display_dic']
+                self.dend_path_original_mm=loaded_dict['dend_path_original_mm']
+                self.path_heads_show=self.model_sufix_dic.get('path_heads_show',None)
+    
+
+            # if dend_data is not None: 
+            #     dend_names=dend_names if not None else dend_data['dend_names']
+            #     dend_namess=dend_namess if not None else dend_data['dend_namess']
+            #     dend_path_inits=dend_path_inits if not None else dend_data['dend_path_inits'] 
+            return 
+
+
         for pa in pinn_dir_data_all:
             if pa is not None:
                 for model_sufi in model_sufix_all:
                     for path_head in path_headss:
-                        modd=os.path.join(self.file_path_org, 'model',path_head,model_sufi)
-                        key=f'{path_head}_{model_sufi}_{pa}'
-                        self.path_file_sub[self.inten_file_sub[0]][key] =self.get_paths([path_head, model_sufi, pa])
-                        self.path_file[key]=self.get_paths([path_head, model_sufi, pa])
+                        modd=os.path.join(self.file_path_org, 'model',path_head,model_sufi) 
+                        key=f'{path_head}_{model_sufi}_{pa}'# if dict_dend_path is 'current' else f'{dict_dend_path}_{path_head}_{model_sufi}_{pa}'
+                        self.path_file_sub[self.inten_file_sub[0]][key] =self.get_paths([path_head, model_sufi, pa],
+                                                                                            **self.dict_dend['path'][dict_dend_path],)
+                        self.path_file[key]=self.get_paths([path_head, model_sufi, pa],
+                                                            **self.dict_dend['path'][dict_dend_path],)
                         os.makedirs(self.path_file[key], exist_ok=True) 
                         for tyy in self.inten_file_sub[1:]: 
-                            self.path_file_sub[tyy][key]= os.path.join(self.path_file[key],f'{tyy}.txt') 
-
+                            self.path_file_sub[tyy][key]= os.path.join(self.path_file[key],f'{tyy}.txt')  
+                        for tyy in self.intensity_spines_logit: 
+                            self.path_file_sub[tyy][key]= os.path.join(os.path.dirname(self.path_file[key]),f'{tyy}.txt')  
                         # for tyy in self.inten_pca: 
                         #     self.path_file_sub[tyy][key]= os.path.join(self.path_file[key],f'{tyy}.txt') 
 
@@ -995,7 +1349,17 @@ class get_files(get_name,get_param):
                         for tyyy in  self.inten_file_model_train_spine_iou:  
                                 self.path_file_sub[tyy][key][tyyy]= os.path.join(modd,f'{tyyy}.txt')
 
+                        tyy =self.inten_file_model_spine_auc[0]
+                        self.path_file_sub[tyy][key]={}
+                        for tyyy in  self.inten_file_model_train_spine_auc:  
+                                self.path_file_sub[tyy][key][tyyy]= os.path.join(modd,f'{tyyy}.txt')
 
+                        tyy =self.inten_file_model_spine_dice[0]
+                        self.path_file_sub[tyy][key]={}
+                        for tyyy in  self.inten_file_model_train_spine_dice:  
+                                self.path_file_sub[tyy][key][tyyy]= os.path.join(modd,f'{tyyy}.txt')
+
+        # self.inten_file_model_spine_auc=[ 'auc_spine_sh','auc_spine_sp' ]
                         tyy =self.inten_file_model_shap[0]
                         tyyy=self.inten_file_model_train_shap[0]
                         self.path_file_sub[tyy][key]= os.path.join(modd,f'{tyyy}.csv')
@@ -1004,7 +1368,9 @@ class get_files(get_name,get_param):
                         for tyy in self.base_features_dict.keys(): 
                             self.path_file_sub[tyy][key]= os.path.join(self.file_path_feat,f'{tyy}.txt') 
 
- 
+  
+
+
         # if len(self.obj_org_path_dict)>0:
         #     for ii,(keys,val) in enumerate(self.obj_org_path_dict.items()): 
         #         path_head ,pa,model_sufi=f'true_{ii}','save',f'save' 
@@ -1015,32 +1381,40 @@ class get_files(get_name,get_param):
         self.dend_path_original_mm={ky:{} for ky in ['keys','dir']}  
         if len(self.obj_org_path_dict)>0:
             for ii,(keys,val) in enumerate(self.obj_org_path_dict.items()): 
-                path_head ,pa,model_sufi=keys,'save',f'save' 
+                path_head ,model_sufi,pa=keys,'save',f'save' 
                 key=f'{path_head}_{model_sufi}_{pa}'
                 path_headss.extend(path_head) 
                 self.dend_path_original_mm['dir'][key]=os.path.join(val, self.dend_name, 'data_org')
                 self.dend_path_original_mm['keys'][key]=keys
-                pasd=self.path_file_sub[self.inten_file_sub[0]][key]=self.path_file[key]=self.get_paths([path_head, model_sufi, pa])
-                os.makedirs(self.path_file[key], exist_ok=True)
  
-                path_head ,pa,model_sufi=keys,'save',f'save' 
-                key=f'resized_{path_head}_{model_sufi}_{pa}' 
-                pasd=self.path_file_sub[self.inten_file_sub[0]][key]=self.path_file[key]=self.get_paths(['resized',path_head, model_sufi, pa],name='resized')
-        # else: 
-        #     path_head ,pa,model_sufi='true','save','save' 
-        #     key=f'{path_head}_{model_sufi}_{pa}'
-        #     path_headss.extend(path_head) 
-        #     self.dend_path_original_mm['dir'][key]=os.path.join(self.dend_path_org, 'data_org')
-        #     pasd=self.path_file_sub[self.inten_file_sub[0]][key]=self.path_file[key]=self.get_paths([path_head, model_sufi, pa])
-        #     os.makedirs(self.path_file[key], exist_ok=True) 
+                # for tyy in list(set(self.inten_file_sub[1:]+list(self.base_features_dict.keys()))): 
 
+                path_head,model_sufi ,pa=keys,'save',f'save' 
+                # key=f'resized_{path_head}_{model_sufi}_{pa}' 
+                # pasd=self.path_file_sub[self.inten_file_sub[0]][key]=self.path_file[key]=self.get_paths(['resized',path_head, model_sufi, pa],name='resized')
+                self.dend_path_true_final_current= os.path.join(self.dend_path_true,keys)
+                self.dend_path_true_final_entry = os.path.join(self.dend_path_true_entry,keys)
+                self.dend_path_true_final_exit  = os.path.join(self.dend_path_true_exit,keys)
+                self.dend_path_true_final_old = os.path.join(self.dend_path_true_old,keys)
+                self.dict_dend['path']['old']['dend_path_true_final']=self.dend_path_true_final_old
+                self.dict_dend['path']['current']['dend_path_true_final']=self.dend_path_true_final_current
+                self.dend_path_true_final=self.dict_dend['path'][dict_dend_path]['dend_path_true_final']
+                self.path_file[key]=self.dend_path_true_final
+                # pasd=self.path_file_sub[self.inten_file_sub[0]][key]=
+                # print('[[[[]]]]',self.dend_path_true_final,)
+                os.makedirs(self.dend_path_true_final, exist_ok=True)
+                for tyy in self.inttt:
+                    self.path_file_sub[tyy][key]= os.path.join(self.dend_path_true_final,f'{tyy}.txt')
+
+ 
         for keyss,path_head in  self.dend_path_original_mm['keys'].items():
             pasd= self.path_file[keyss]  
             for pa in pinn_dir_data_all:
                 if pa is not None:
                     for model_sufi in model_sufix_all: 
                             modd=os.path.join(self.file_path_org, 'model',path_head,model_sufi)
-                            key=f'{path_head}_{model_sufi}_{pa}' 
+                            key=f'{path_head}_{model_sufi}_{pa}' # if dict_dend_path is 'current' else f'{dict_dend_path}_{path_head}_{model_sufi}_{pa}'
+                            # key=f'{path_head}_{model_sufi}_{pa}' 
                             self.path_file_sub[self.inten_file_sub[0]][key]=self.path_file[key]=pasd
                             # os.makedirs(self.path_file[key], exist_ok=True) 
                             for tyy in self.inten_file_sub[1:]: 
@@ -1078,6 +1452,16 @@ class get_files(get_name,get_param):
                             for tyyy in  self.inten_file_model_train_spine_iou:  
                                     self.path_file_sub[tyy][key][tyyy]= os.path.join(modd,f'{tyyy}.txt')
 
+                            tyy =self.inten_file_model_spine_auc[0]
+                            self.path_file_sub[tyy][key]={}
+                            for tyyy in  self.inten_file_model_train_spine_auc:  
+                                    self.path_file_sub[tyy][key][tyyy]= os.path.join(modd,f'{tyyy}.txt')
+
+                            tyy =self.inten_file_model_spine_dice[0]
+                            self.path_file_sub[tyy][key]={}
+                            for tyyy in  self.inten_file_model_train_spine_dice:  
+                                    self.path_file_sub[tyy][key][tyyy]= os.path.join(modd,f'{tyyy}.txt')
+
 
                             tyy =self.inten_file_model_shap[0]
                             tyyy=self.inten_file_model_train_shap[0]
@@ -1090,30 +1474,69 @@ class get_files(get_name,get_param):
                     for res in ['result',]:
                         for path_head in path_heads:
                             key=f'{res}_{path_head}_{model_sufi}_{pa}' 
-                            self.path_file_sub[self.inten_file_sub[0]][key]=self.path_file[key]=self.get_paths([res,path_head, model_sufi, pa])
+                            key=f'{res}_{path_head}_{model_sufi}_{pa}' # if dict_dend_path is 'current' else f'{dict_dend_path}_{res}_{path_head}_{model_sufi}_{pa}'
+                            self.path_file_sub[self.inten_file_sub[0]][key]=self.path_file[key]=self.get_paths([res,path_head, model_sufi, pa],
+                                                                                                               **self.dict_dend['path'][dict_dend_path])
                             os.makedirs(self.path_file[key], exist_ok=True)  
 
         for nn in 'true_0':
             remove_directory(os.path.join(self.dend_path_org,  nn))
-            remove_directory(os.path.join(self.file_path_org, 'data', self.dend_path_init,'result',nn))
+            # remove_directory(os.path.join(self.file_path_model_data, self.dend_path_init,'result',nn)), self.dend_path_inits[index]
+            remove_directory(os.path.join(self.file_path_model_data,'result',nn))
 
-        key=f'result_true'
-        self.path_file_sub[self.inten_file_sub[0]][key]=self.path_file[key]=self.get_paths(['result', 'true_0'])
+        key=f'result_true'  if dict_dend_path == 'current' else f'{dict_dend_path}_result_true'
+        self.path_file_sub[self.inten_file_sub[0]][key]=self.path_file[key]=self.get_paths(['result', 'true_0'],
+                                                                                           **self.dict_dend['path'][dict_dend_path]
+                                                                                           )
         os.makedirs(self.path_file[key], exist_ok=True) 
 
     
-        key=f'result_appr'
-        self.path_file_sub[self.inten_file_sub[0]][key]=self.path_file[key]=self.get_paths(['result', 'appr'])
+        key=f'result_appr'#  if dict_dend_path is 'current' else f'{dict_dend_path}_result_appr'
+        self.path_file_sub[self.inten_file_sub[0]][key]=self.path_file[key]=self.get_paths(['result', 'appr'],
+                                                                                           **self.dict_dend['path'][dict_dend_path]
+                                                                                           )
         os.makedirs(self.path_file[key], exist_ok=True) 
  
 
+        self.dend_data_all ={jj:
+                                    {ii:{} 
+                                        for ii in ['path','distance','vertices',f'distance_{wrap_part}',f'vertices_{wrap_part}']
+                                    }
+                                    for jj in ['entry','old','exit']
+                                    }
+        # dend_path_entry_data_all['path'] = {
+        #                                     "entry": self.dend_path_org_entry,
+        #                                     "old":   self.dend_path_org_old,
+        #                                     "exit":  self.dend_path_org_exit
+        #                                 }
+        mkm = [
+            [self.dend_path_org_entry,        self.dend_path_org_old,        self.dend_path_org_exit],
+            [self.txt_skl_distance,           self.txt_skl_distance_org,     self.txt_skl_distance],
+            [self.txt_skl_vertices,           self.txt_skl_vertices_org,     self.txt_skl_vertices],
+            [self.txt_skl_shaft_distance,     self.txt_skl_shaft_distance_org,self.txt_skl_shaft_distance],
+            [self.txt_skl_shaft_vertices,     self.txt_skl_shaft_vertices_org,self.txt_skl_shaft_vertices],
+            [self.txt_skl_index,              self.txt_skl_index_org,         self.txt_skl_index], 
+        ]
+
+        for mm, lol in zip(
+                ['path', 'distance', 'vertices', f'distance_{wrap_part}', f'vertices_{wrap_part}','skl_index',],
+                mkm): 
+            for idx, nam in zip(["entry", "old", "exit"], lol):
+                self.dend_data_all[idx][mm] = nam
 
 
-    def get_dash_pages_name(self,index,data_studied):
+
+
+    def get_dash_pages_name(self,index,data_studied,
+                        dict_dend_path='current',
+                        drop_dic_name=None,):
         self.get_dend_name(data_studied=data_studied,
-                            index=index,  ) 
+                            index=index,
+                        dict_dend_path=dict_dend_path,
+                        drop_dic_name=drop_dic_name,
+                               ) 
         
-        dash_path_dend=os.path.join(self.dash_pages_path,self.data_studied,self.model_type, self.model_sufix, self.dend_path_inits[index])  
+        dash_path_dend=os.path.join(self.dash_pages_path,self.data_studied,self.model_type, self.model_sufix,self.file_diff)  
         os.makedirs(dash_path_dend, exist_ok=True)
         self.dash_pages_name=os.path.join(dash_path_dend,f'{self.dend_names[index]}.py')
 
@@ -1156,7 +1579,7 @@ class get_files(get_name,get_param):
         model_sufix_all= model_sufix_all or self.model_sufix_all# or ['pre','opt' ,model_sufix] 
         path_heads = path_heads or self.path_heads
 
-        for path_head in path_head_clean:
+        for path_head_clean  in  path_head:
             if path_head not in ['true','result']:
                 for pa in pinn_dir_data_all:
                     if pa is not None:
@@ -1165,7 +1588,7 @@ class get_files(get_name,get_param):
                             if key in self.path_file:
                                 remove_directory(self.path_file[key] )   
 
-        if 'result' in path_head_clean:
+        if path_head_clean =='result'  :
             for pa in pinn_dir_data_all:
                 if pa is not None:
                     for model_sufi in model_sufix_all:
@@ -1176,7 +1599,7 @@ class get_files(get_name,get_param):
                                 if key in self.path_file:
                                     remove_directory(self.path_file[key] )  
 
-        if 'all' in path_head_clean:
+        if path_head_clean=='all':
             remove_directory(self.file_path_org_init)
             remove_directory(os.path.join(self.dash_pages_path,self.data_studied))
 
@@ -1230,8 +1653,9 @@ class get_files(get_name,get_param):
  
 
         for nn in 'true_0':
-            remove_directory(os.path.join(self.dend_path_org,  nn))
-            remove_directory(os.path.join(self.file_path_org, 'data', self.dend_path_init,'result',nn))
+            remove_directory(os.path.join(self.dend_path_true,  nn))
+            # remove_directory(os.path.join(self.file_path_model_data, self.dend_path_init,'result',nn))
+            remove_directory(os.path.join(self.file_path_model_data, 'result',nn))
 
 class dend_dataset:
     def __init__(self, dend_path_inits=None, dend_names=None, dend_namess=None, 
@@ -1389,7 +1813,8 @@ class get_app_param(get_name ):
                             {'label': 'Image',         'value': 'algorithm', 'style': dropdown_options_style},
                             # {'label': 'Comparison',        'value': 'comparison',    'style': dropdown_options_style},  
                             {'label': 'Skeleton',      'value': 'skeleton', 'style': dropdown_options_style},
-                            # {'label': 'Accuracy',              'value': 'accuracy','style': dropdown_options_style}, 
+                            {'label': 'Accuracy',              'value': 'accuracy','style': dropdown_options_style}, 
+                            {'label': 'ROC Curve',              'value': 'roc_curve','style': dropdown_options_style}, 
                     ]  
         # dropdown_mode_option.append({'label': 'IOU',      'value': 'IOU', 'style': dropdown_options_style},)
         for mmnn in self.inten_file_model_head_neck:
@@ -1463,12 +1888,14 @@ class get_app_param(get_name ):
             self.dropdown_intensity_option.append({'label': intt,   'value': intt,       'style': dropdown_options_style})  
         for intt in self.base_features_dict.keys():
             self.dropdown_intensity_option.append({'label': intt,   'value': intt,       'style': dropdown_options_style}) 
+        for intt in self.intensity_spines_logit:
+            self.dropdown_intensity_option.append({'label': intt,   'value': intt,       'style': dropdown_options_style}) 
 
 
 
 
 
-    def more_param(self,id_name_end,model_sufix,dend_name): 
+    def more_param(self,id_name_end,model_type,model_sufix,path_dir,dend_name): 
         dropdown_options_style=self.dropdown_options_style 
         self.dend_name=dend_name 
 
@@ -1560,8 +1987,9 @@ class get_app_param(get_name ):
         self.dropdown_path_head={
             'option'     :self.dropdown_path_head_option,
             'id'         :id_name,
-            'value'      :self.dropdown_path_head_option[0]['value'],
-            'placeholder':f'Select {action_name}', 
+            # 'value'      :self.dropdown_path_head_option[0]['value'],
+            'value' : model_type,
+            'placeholder':f'Select Type of Model', 
         }
 
         action_name='model_suf'
@@ -1570,7 +1998,7 @@ class get_app_param(get_name ):
             'option'     :self.dropdown_model_suf_option,
             'id'         :id_name,
             'value'      :f'{model_sufix}',
-            'placeholder':f'Select {action_name}', 
+            'placeholder':f'Select Feature Class', 
         }
  
         action_name='path'
@@ -1578,8 +2006,9 @@ class get_app_param(get_name ):
         self.dropdown_path={
             'option'     :self.dropdown_path_option,
             'id'         :id_name,
-            'value'      :self.dropdown_path_option[0]['value'],
-            'placeholder':f'Select {action_name}', 
+            # 'value'      :self.dropdown_path_option[0]['value'],
+            'value':  path_dir,
+            'placeholder':f'Select Weight', 
         } 
         dropdown_dend_option = [{'label': 'Initial', 'value': 'init', 'style': dropdown_options_style} ,
                                 {'label': f'Smoothed', 'value': 'smooth', 'style': dropdown_options_style}]
@@ -1658,67 +2087,45 @@ class get_app_param(get_name ):
 
 
 
-def get_path_train(data_head, dest_head, data_sufix, dest_sufix, data_dir, dest_dir): 
+def get_path_train(data_head, dest_head, data_sufix, dest_sufix, data_dir, dest_dir,path_list=['shaft_path','spine_path',] ): 
     model = {
         path: {'data': {}, 'dest': {}}
-        for path in ['shaft_path','spine_path', 'spine_path_pre', ] 
+        # for path in ['shaft_path','spine_path', 'spine_path_pre', ] 
+        for path in path_list
                      
     }
-     
+    path_train = {}  
     for md in model:
-        model[md]['data']['head'] = data_head  
-        model[md]['dest']['head'] = dest_head 
-        model[md]['data']['sufix'] = data_sufix
-        model[md]['dest']['sufix'] = dest_sufix
-        if md in ['spine_path_pre','center_curv']:
-            model[md]['data']['dir'] = f'{data_dir}_pre'
-            model[md]['dest']['dir'] = f'{dest_dir}_pre'
-        elif md == 'shaft_path': 
-            model[md]['data']['dir'] = f'save'
-            model[md]['dest']['dir'] = f'save'
-        else:
-            if not data_dir.startswith('save') and not dest_dir.startswith('save'):
-                model[md]['data']['dir'] = data_dir
-                model[md]['dest']['dir'] = dest_dir
-     
-    path_train = {} 
-    path_train['data_true_iou'] = 'true_save_save'  
-    path_train['pinn_save_save'] = 'pinn_save_save' 
-    for md in model:
-        path_train[f'data_{md}'] = f"{model[md]['data']['head']}_{model[md]['data']['sufix']}_{model[md]['data']['dir']}"
-        path_train[f'dest_{md}'] = f"{model[md]['dest']['head']}_{model[md]['dest']['sufix']}_{model[md]['dest']['dir']}"
+        path_train[f'data_{md}'] = f"{data_head}_{data_sufix}_{data_dir}"
+        path_train[f'dest_{md}'] = f"{dest_head}_{dest_sufix}_{dest_dir}"
 
 
-    path_train['data_shaft_vertices_center_path']=f"{model['shaft_path']['data']['head']}_{model['shaft_path']['data']['sufix']}_{model['shaft_path']['data']['dir']}"
-    path_train['dest_shaft_vertices_center_path']=f"{model['shaft_path']['dest']['head']}_{model['shaft_path']['dest']['sufix']}_{model['shaft_path']['dest']['dir']}"
+    # path_train['data_shaft_vertices_center_path']=f"{model['shaft_path']['data']['head']}_{model['shaft_path']['data']['sufix']}_{model['shaft_path']['data']['dir']}"
+    # path_train['dest_shaft_vertices_center_path']=f"{model['shaft_path']['dest']['head']}_{model['shaft_path']['dest']['sufix']}_{model['shaft_path']['dest']['dir']}"
     return path_train
 
 
 
  
-
+ 
 
 
 class get_data_mode(get_name,get_model_name):
     def __init__(self,mode_ids=[],
                 pre_portion=None,
+                path_list=['shaft_path','spine_path',  ] ,
                 data_mode={}):
         super().__init__() 
         self.data_mode=data_mode
         self.data_mode['model_sufix_all']=[]
         self.data_mode['pinn_dir_data_all']=[]
-        self.model_sufix_all=[]
-        self.pinn_dir_data_all=[]
+        self.model_sufix_all=set()
+        self.pinn_dir_data_all=set()
         self.data_mode['mode_id']=[]
         self.mode_ids=mode_ids
+        self.path_list=path_list
         
-        pinn_dir_dest= data_sufix=  data_dir= 'save' 
-
-
-        self.model_sufix_all.extend([ data_sufix]) 
-        self.model_sufix_all=list(set(self.model_sufix_all))
-        self.pinn_dir_data_all.extend([data_dir, ])
-        self.pinn_dir_data_all=list(set(self.pinn_dir_data_all))
+        pinn_dir_dest= data_sufix=  data_dir= 'save'  
 
 
     def train_pre(self,data_mode=None,
@@ -1727,8 +2134,14 @@ class get_data_mode(get_name,get_model_name):
                 train_test='train', 
                 data_head='true',
                 dest_head='true', 
-                seg_dend='nfull',
+                data_dir=None,
+                data_sufix=None,
+                dest_dir=None,
+                dest_sufix=None,
+                seg_dend='save',
                 base_features_index=[0,1,2,3] ,
+                path_list=None,
+                model_init=None,
                 ):
         mon=get_model_name(
             pre_opt=pre_opt,
@@ -1737,12 +2150,12 @@ class get_data_mode(get_name,get_model_name):
             dest_head=dest_head,
             pre_portion=pre_portion)
         data_mode=data_mode if data_mode is not None else self.data_mode 
+        path_list=path_list if path_list is not None else self.path_list
 
         
 
         inten_pinn_index=[]
-        mon.vals(base_features_index=base_features_index,
-                 inten_pinn_index=inten_pinn_index)
+        mon.vals(base_features_index=base_features_index, inten_pinn_index=inten_pinn_index)
         list_features=[]
         base_features_list=mon.base_features_list
         dest_sufix_pr= mon.dest_sufix 
@@ -1750,60 +2163,40 @@ class get_data_mode(get_name,get_model_name):
  
 
  
-        data_sufix_pr=pinn_dir_data='save'
-        data_dir_pr='save'
+        pinn_dir_data=seg_dend 
         dest_dir_pr=mon.dest_dir# 
         
-        data_sufix=data_sufix_pr
-        dest_sufix=dest_sufix_pr
-        data_dir=dest_dir_pr
-        dest_dir=dest_dir_pr
+        data_sufix=data_sufix or seg_dend
+        dest_sufix=dest_sufix or dest_sufix_pr
+        data_dir=data_dir or dest_dir_pr
+        dest_dir=dest_dir or dest_dir_pr
  
         self.mode_id=mode_id=mon.mode_id#f'train_{seg_dend}_{pre_portion[:2]}_{dest_head}_{dest_sufix}'
         self.mode_ids.append(mode_id)
         data_mode['mode_id'].append(mode_id)
         data_mode[mode_id]={}
-        path_train_pre=get_path_train(data_head, dest_head, data_sufix, dest_sufix, data_dir, dest_dir) 
+        path_train_pre=get_path_train(data_head, dest_head, data_sufix, dest_sufix, data_dir, dest_dir,path_list=path_list) 
         data_mode[mode_id]['path_train']= path_train_pre 
         data_mode[mode_id]['model_sufix']=[dest_sufix ]
         data_mode[mode_id]['dest_dir']=dest_dir 
         data_mode[mode_id]['base_features_list']=base_features_list
         data_mode[mode_id]['list_features']=list_features
+        data_mode[mode_id]['model_init']=model_init
         data_mode[mode_id]['pre_portion']= pre_portion 
         data_mode[mode_id]['pinn_dir_data']= pinn_dir_data   
         data_mode[mode_id]['seg_dend']=seg_dend
-        data_mode[mode_id]['dest_path']='dest_spine_path' 
         data_mode[mode_id]['get_training']=True 
         data_mode[mode_id]['get_shaft']=True  
         data_mode[mode_id]['get_segm']=True 
         data_mode[mode_id]['get_head_neck_segm']=True  
         data_mode[mode_id]['get_segss_group']=False
         data_mode[mode_id]['train_spines']=False  
-        
-        data_shaft_train_path=data_mode[mode_id]['path_train']['dest_spine_path_pre']
-        data_shaft_vertices_center_path=data_mode[mode_id]['path_train']['data_shaft_path']
-        data_mode[mode_id]['path_train']['data_train_path']=data_shaft_train_path
-        data_mode[mode_id]['path_train']['data_shaft_path']=data_shaft_vertices_center_path
-        dest_shaft_vertices_center_path=data_mode[mode_id]['path_train']['dest_shaft_path']
-        data_shaft_vertices_center_path_opt=data_mode[mode_id]['path_train']['data_spine_path']
-        dest_shaft_vertices_center_path_opt=data_mode[mode_id]['path_train']['dest_spine_path']
-
         self.dest_sufix_pr=dest_sufix_pr
         self.dest_dir_pr=dest_dir_pr
-        self.pinn_dir_data=pinn_dir_data
-        self.data_shaft_train_path=data_shaft_train_path
-        self.data_shaft_vertices_center_path=data_shaft_vertices_center_path
-        self.dest_shaft_vertices_center_path_opt=dest_shaft_vertices_center_path_opt 
- 
-         
-        data_mode[mode_id]['path_train']['data_shaft_path']=data_shaft_vertices_center_path
-        data_mode[mode_id]['path_train']['data_spine_path_center']=dest_shaft_vertices_center_path_opt
-        data_mode[mode_id]['path_train']['dest_spine_path_center']=data_mode[mode_id]['path_train']['dest_spine_path'] 
+        self.pinn_dir_data=pinn_dir_data 
+        self.model_sufix_all.update([dest_sufix, data_sufix])
+        self.pinn_dir_data_all.update([data_dir, dest_dir])
 
-        self.model_sufix_all.extend([dest_sufix,data_sufix]) 
-        self.model_sufix_all=list(set(self.model_sufix_all))
-        self.pinn_dir_data_all.extend([data_dir,f'{data_dir}_pre',dest_dir,f'{dest_dir}_pre'])
-        self.pinn_dir_data_all=list(set(self.pinn_dir_data_all))
 
         return data_mode
 
@@ -1817,9 +2210,15 @@ class get_data_mode(get_name,get_model_name):
                 pre_portion='head_neck',
                 data_head='true',
                 dest_head='true', 
-                seg_dend='nfull',
+                seg_dend='save',
+                data_dir=None,
+                data_sufix=None,
+                dest_dir=None,
+                dest_sufix=None,
+                path_list=None,
                 base_features_index=[0,1,2,3],
         inten_pinn_index=[0,1],
+        model_init=None,
                 ):
         mon=get_model_name(
             pre_opt=pre_opt,
@@ -1828,19 +2227,21 @@ class get_data_mode(get_name,get_model_name):
             dest_head=dest_head,
             pre_portion=pre_portion)
         data_mode=data_mode if data_mode is not None else self.data_mode
+        path_list=path_list if path_list is not None else self.path_list
 
-        data_sufix=dest_sufix_pr=self.dest_sufix_pr
-        data_dir=dest_dir_pr=self.dest_dir_pr
+
+        data_sufix=dest_sufix_pr=data_sufix or self.dest_sufix_pr
+        data_dir=dest_dir_pr=data_dir or self.dest_dir_pr
         pinn_dir_data=self.pinn_dir_data
-        data_shaft_train_path=self.data_shaft_train_path
-        data_shaft_vertices_center_path=self.data_shaft_vertices_center_path
-        dest_shaft_vertices_center_path_opt=self.dest_shaft_vertices_center_path_opt 
+        # data_shaft_train_path=self.data_shaft_train_path
+        # data_shaft_vertices_center_path=self.data_shaft_vertices_center_path
+        # dest_shaft_vertices_center_path_opt=self.dest_shaft_vertices_center_path_opt 
  
    
         mon.vals(base_features_index=base_features_index,
                  inten_pinn_index=inten_pinn_index) 
         base_features_list=mon.base_features_list
-        dest_sufix=  mon.dest_sufix
+        dest_sufix=dest_sufix or  mon.dest_sufix
         self.mode_id=mode_id=mon.mode_id
         self.mode_ids.append(mode_id)
         list_features=[[mon.inten_pinn_tmp[nam]['id_path'], mon.inten_pinn_tmp[nam]['name'] ] for nam in inten_pinn_index] 
@@ -1851,13 +2252,14 @@ class get_data_mode(get_name,get_model_name):
         data_mode[mode_id]={}
 
 
-        path_train_opt=get_path_train(data_head, dest_head, data_sufix, dest_sufix, data_dir, dest_dir) 
-        path_train_opt['data_shaft_vertices_center_path']=path_train_opt['data_true_iou'] 
+        path_train_opt=get_path_train(data_head, dest_head, data_sufix, dest_sufix, data_dir, dest_dir,path_list=path_list) 
+        # path_train_opt=get_path_train(data_head, dest_head, data_sufix, dest_sufix, data_dir, dest_dir) 
         data_mode[mode_id]['path_train']= path_train_opt#get_path_train(data_head, dest_head, data_sufix, dest_sufix, data_dir, dest_dir)
         data_mode[mode_id]['model_sufix']=[dest_sufix ]
         data_mode[mode_id]['dest_dir']=dest_dir  
         data_mode[mode_id]['base_features_list']=base_features_list
         data_mode[mode_id]['list_features']=list_features
+        data_mode[mode_id]['model_init']=model_init
         data_mode[mode_id]['pre_portion']= pre_portion  
         data_mode[mode_id]['pinn_dir_data']= pinn_dir_data  
         data_mode[mode_id]['seg_dend']=seg_dend
@@ -1869,15 +2271,19 @@ class get_data_mode(get_name,get_model_name):
         data_mode[mode_id]['get_segss_group']=True
         data_mode[mode_id]['train_spines']=False  
 
+        '''
+        path_train_opt['data_shaft_vertices_center_path']=path_train_opt['data_true_iou'] 
         data_mode[mode_id]['path_train']['data_train_path']=data_shaft_train_path 
         data_mode[mode_id]['path_train']['data_shaft_path']=data_shaft_vertices_center_path
         data_mode[mode_id]['path_train']['data_spine_path_center']=dest_shaft_vertices_center_path_opt
-        data_mode[mode_id]['path_train']['dest_spine_path_center']=data_mode[mode_id]['path_train']['dest_spine_path'] 
+        data_mode[mode_id]['path_train']['dest_spine_path_center']=data_mode[mode_id]['path_train']['dest_spine_path'] '''
  
-        self.model_sufix_all.extend([dest_sufix,data_sufix]) 
-        self.model_sufix_all=list(set(self.model_sufix_all))
-        self.pinn_dir_data_all.extend([data_dir,f'{data_dir}_pre',dest_dir,f'{dest_dir}_pre'])
-        self.pinn_dir_data_all=list(set(self.pinn_dir_data_all))
+        # self.model_sufix_all.extend([dest_sufix,data_sufix]) 
+        # self.model_sufix_all=list(set(self.model_sufix_all))
+        # self.pinn_dir_data_all.extend([data_dir ,dest_dir, ])
+        # self.pinn_dir_data_all=list(set(self.pinn_dir_data_all))
+        self.model_sufix_all.update([dest_sufix, data_sufix])
+        self.pinn_dir_data_all.update([data_dir, dest_dir])
         
         return data_mode
 
@@ -1890,8 +2296,14 @@ class get_data_mode(get_name,get_model_name):
                  pre_portion='head_neck',
                 data_head='pinn',
                 dest_head='pinn', 
-                seg_dend='nfull' ,
+                seg_dend='save' ,
+                data_dir=None,
+                dest_dir=None,
+                data_sufix=None,
+                dest_sufix=None,
+                path_list=None,
                 base_features_index=[0,1,2,3] ,
+                model_init=None,
                 ):
         mon=get_model_name(
             pre_opt=pre_opt,
@@ -1901,138 +2313,88 @@ class get_data_mode(get_name,get_model_name):
             pre_portion=pre_portion)
         
         data_mode=data_mode if data_mode is not None else self.data_mode
+        path_list=path_list if path_list is not None else self.path_list
+
   
         #____________________________________'pre_non_full'________________________________ 
     
         inten_pinn_index=[]
-        mon.vals(base_features_index=base_features_index,
-                 inten_pinn_index=inten_pinn_index) 
+        mon.vals(base_features_index=base_features_index, inten_pinn_index=inten_pinn_index) 
         base_features_list=mon.base_features_list
         dest_sufix=dest_sufix_pr=data_sufix_pr=mon.dest_sufix
         self.mode_id=mode_id=mon.mode_id
         self.mode_ids.append(mode_id)
         list_features=[[mon.inten_pinn_tmp[nam]['id_path'], mon.inten_pinn_tmp[nam]['name'] ] for nam in inten_pinn_index] 
  
-        dest_dir=dest_dir_pr=mon.dest_dir 
+        dest_dir=dest_dir or mon.dest_dir  
 
-        data_sufix=data_sufix_pr#'save'
-        dest_sufix=dest_sufix_pr
-        data_dir=dest_dir#data_dir_pr #'save'#
+        data_sufix=data_sufix or data_sufix_pr#'save'
+        dest_sufix=dest_sufix or dest_sufix_pr
+        data_dir=data_dir or dest_dir#data_dir_pr #'save'#
         # dest_dir=dest_dir#dest_dir_pr 
-        # path_train_pre=get_path_train(data_head, dest_head, data_sufix, dest_sufix, data_dir, dest_dir)
- 
+        # path_train_pre=get_path_train(data_head, dest_head, data_sufix, dest_sufix, data_dir, dest_dir) 
         # mode_id=f'test_{seg_dend}_{pre_portion[:2]}_{dest_head}_{dest_sufix}'
         data_mode['mode_id'].append(mode_id)
         data_mode[mode_id]={} 
-        data_mode[mode_id]['path_train']= get_path_train(data_head, dest_head, data_sufix, dest_sufix, data_dir, dest_dir) 
+        data_mode[mode_id]['path_train']= get_path_train(data_head, dest_head, data_sufix, dest_sufix, data_dir, dest_dir,path_list=path_list) 
         data_mode[mode_id]['model_sufix']=[dest_sufix] 
         data_mode[mode_id]['dest_dir']=dest_dir 
         data_mode[mode_id]['base_features_list']=base_features_list
         data_mode[mode_id]['list_features']=[] 
+        data_mode[mode_id]['model_init']=model_init
         data_mode[mode_id]['pre_portion']= pre_portion 
         data_mode[mode_id]['pinn_dir_data']= seg_dend 
-        data_mode[mode_id]['seg_dend']='full' 
+        data_mode[mode_id]['seg_dend']=seg_dend
         data_mode[mode_id]['get_training']=False 
         data_mode[mode_id]['get_shaft']=True  
         data_mode[mode_id]['get_segm']=True 
         data_mode[mode_id]['get_head_neck_segm']=True 
-        data_mode[mode_id]['dest_path']='dest_spine_path' 
         data_mode[mode_id]['get_segss_group']=False
         data_mode[mode_id]['train_spines']=False 
- 
-        data_mode[mode_id]['shaft']={}
-        data_mode[mode_id]['shaft']['path']='dest_spine_path_pre' 
-        data_mode[mode_id]['shaft']['tf']=True
-
-        data_mode[mode_id]['group']={}
-        data_mode[mode_id]['group']['path']='dest_spine_path' 
-        data_mode[mode_id]['group']['tf']=False
-        data_mode[mode_id]['group']['seg_dend']='nfull'
-
-        data_mode[mode_id]['process']={}
-        data_mode[mode_id]['process']['path']='dest_spine_path_pre' 
-        data_mode[mode_id]['process']['tf']=True
-        data_mode[mode_id]['process']['seg_dend']='full'
-
-        data_mode[mode_id]['sp_full']={}
-        data_mode[mode_id]['sp_full']['path']='dest_spine_path_pre' 
-        data_mode[mode_id]['sp_full']['tf']=True
-        data_mode[mode_id]['sp_full']['seg_dend']='full'
-
-        data_mode[mode_id]['sp_nfull']={}
-        data_mode[mode_id]['sp_nfull']['path']='dest_spine_path' 
-        data_mode[mode_id]['sp_nfull']['tf']=True
-        data_mode[mode_id]['sp_nfull']['seg_dend']='nfull'
-
-
-        data_mode[mode_id]['hn_full']={}
-        data_mode[mode_id]['hn_full']['path']='dest_spine_path_pre' 
-        data_mode[mode_id]['hn_full']['tf']=True
-        data_mode[mode_id]['hn_full']['seg_dend']='full'
-
-        data_mode[mode_id]['hn_nfull']={}
-        data_mode[mode_id]['hn_nfull']['path']='dest_spine_path' 
-        data_mode[mode_id]['hn_nfull']['tf']=True
-        data_mode[mode_id]['hn_nfull']['seg_dend']='nfull'
-
-
-
-        data_shaft_train_path=data_mode[mode_id]['path_train']['dest_spine_path_pre']
-        data_shaft_vertices_center_path=data_mode[mode_id]['path_train']['data_shaft_path']
-        dest_shaft_vertices_center_path=data_mode[mode_id]['path_train']['dest_shaft_path']
-        data_shaft_vertices_center_path_opt=data_mode[mode_id]['path_train']['data_spine_path']
-        dest_shaft_vertices_center_path_opt=data_mode[mode_id]['path_train']['dest_spine_path']
-
-
         self.dest_sufix_pr=dest_sufix_pr
-        self.dest_dir_pr=dest_dir_pr
-        self.pinn_dir_data=seg_dend
-        self.data_shaft_train_path=data_shaft_train_path
-        self.data_shaft_vertices_center_path=data_shaft_vertices_center_path
-        self.dest_shaft_vertices_center_path_opt=dest_shaft_vertices_center_path_opt  
-        self.dest_spine_path_pre_init=data_mode[mode_id]['path_train']['pinn_save_save']
+        self.dest_dir_pr=dest_dir
+        self.pinn_dir_data=seg_dend 
 
- 
-
-        data_mode[mode_id]['path_train']['data_spine_path_center']=data_mode[mode_id]['path_train']['data_shaft_path']
-        data_mode[mode_id]['path_train']['dest_spine_path_center']=data_mode[mode_id]['path_train']['dest_shaft_path']
-        data_mode[mode_id]['path_train']['dest_spine_path_pre_init']=self.dest_spine_path_pre_init
-        data_mode[mode_id]['path_train']['data_train_path']=data_shaft_train_path
- 
-        self.model_sufix_all.extend([dest_sufix,data_sufix]) 
-        self.model_sufix_all=list(set(self.model_sufix_all))
-        self.pinn_dir_data_all.extend([data_dir,f'{data_dir}_pre',dest_dir,f'{dest_dir}_pre'])
-        self.pinn_dir_data_all=list(set(self.pinn_dir_data_all))
-
+        self.model_sufix_all.update([dest_sufix, data_sufix])
+        self.pinn_dir_data_all.update([data_dir, dest_dir])
         return data_mode
 
 
 
 
-    def test_opt(self,data_mode=None,
+    def test_opt(self,
+                data_mode=None,
                 pre_opt='opt',
                 train_test='test',
                 pre_portion='head_neck',
                 data_head='pinn',
                 dest_head='pinn', 
-                seg_dend='nfull' ,
+                seg_dend='save' ,
+                data_dir=None,
+                data_sufix=None,
+                dest_dir=None,
+                dest_sufix=None,
                 base_features_index=[0,1,2,3] ,
                 inten_pinn_index=[0],
+                path_list=None,
+                model_init=None,
                  ):
         mon=get_model_name(
             pre_opt=pre_opt,
             train_test=train_test, 
             seg_dend=seg_dend,
             dest_head=dest_head,
+            # data_head=data_head,
             pre_portion=pre_portion)
         data_mode=data_mode if data_mode is not None else self.data_mode 
-        data_sufix= self.dest_sufix_pr
-        data_dir=self.dest_dir_pr
+        path_list=path_list if path_list is not None else self.path_list
+
+        data_sufix=data_sufix or self.dest_sufix_pr
+        data_dir=data_dir or self.dest_dir_pr
         pinn_dir_data=self.pinn_dir_data
-        data_shaft_train_path=self.data_shaft_train_path
-        data_shaft_vertices_center_path=self.data_shaft_vertices_center_path
-        dest_shaft_vertices_center_path_opt=self.dest_shaft_vertices_center_path_opt
-        pinn_dir_dest=seg_dend  
+        # data_shaft_train_path=self.data_shaft_train_path
+        # data_shaft_vertices_center_path=self.data_shaft_vertices_center_path
+        # dest_shaft_vertices_center_path_opt=self.dest_shaft_vertices_center_path_opt 
 
 
  
@@ -2047,8 +2409,8 @@ class get_data_mode(get_name,get_model_name):
         mon.vals(base_features_index=base_features_index,
                  inten_pinn_index=inten_pinn_index) 
         base_features_list=mon.base_features_list
-        dest_sufix=mon.dest_sufix
-        dest_dir=mon.dest_dir
+        dest_sufix=dest_sufix or mon.dest_sufix
+        dest_dir=dest_dir or mon.dest_dir
         list_features=[[mon.inten_pinn_tmp[nam]['id_path'], mon.inten_pinn_tmp[nam]['name'] ] for nam in inten_pinn_index] 
    
         self.mode_id=mode_id=mon.mode_id  
@@ -2059,13 +2421,14 @@ class get_data_mode(get_name,get_model_name):
         data_mode[mode_id]={}
  
         
-        data_mode[mode_id]['path_train']= get_path_train(data_head, dest_head, data_sufix, dest_sufix, data_dir, dest_dir)
+        data_mode[mode_id]['path_train']= get_path_train(data_head, dest_head, data_sufix, dest_sufix, data_dir, dest_dir,path_list=path_list)
         data_mode[mode_id]['model_sufix']=[dest_sufix] 
         data_mode[mode_id]['base_features_list']=base_features_list
         data_mode[mode_id]['list_features']=list_features
+        data_mode[mode_id]['model_init']=model_init
         data_mode[mode_id]['pre_portion']= pre_portion  
         data_mode[mode_id]['pinn_dir_data']= pinn_dir_data  
-        data_mode[mode_id]['seg_dend']='nfull'
+        data_mode[mode_id]['seg_dend']=seg_dend
         data_mode[mode_id]['dest_path']='dest_spine_path' 
         data_mode[mode_id]['get_training']=False  
         data_mode[mode_id]['get_shaft']=True 
@@ -2074,67 +2437,27 @@ class get_data_mode(get_name,get_model_name):
         data_mode[mode_id]['get_head_neck_segm']=True 
         data_mode[mode_id]['get_segss_group']=False
         data_mode[mode_id]['train_spines']=False   
-
-        data_mode[mode_id]['shaft']={}
-        data_mode[mode_id]['shaft']['path']='dest_spine_path_pre' 
-        data_mode[mode_id]['shaft']['tf']=True
-
-        data_mode[mode_id]['group']={}
-        data_mode[mode_id]['group']['path']='dest_spine_path' 
-        data_mode[mode_id]['group']['tf']=False
-        data_mode[mode_id]['group']['seg_dend']='nfull'
-
-        data_mode[mode_id]['process']={}
-        data_mode[mode_id]['process']['path']='dest_spine_path_pre' 
-        data_mode[mode_id]['process']['tf']=False
-        data_mode[mode_id]['process']['seg_dend']='full'
-
-        data_mode[mode_id]['sp_full']={}
-        data_mode[mode_id]['sp_full']['path']='dest_spine_path_pre' 
-        data_mode[mode_id]['sp_full']['tf']=True
-        data_mode[mode_id]['sp_full']['seg_dend']='full'
-
-        data_mode[mode_id]['sp_nfull']={}
-        data_mode[mode_id]['sp_nfull']['path']='dest_spine_path' 
-        data_mode[mode_id]['sp_nfull']['tf']=True
-        data_mode[mode_id]['sp_nfull']['seg_dend']='nfull'
-
-
-        data_mode[mode_id]['hn_full']={}
-        data_mode[mode_id]['hn_full']['path']='dest_spine_path_pre' 
-        data_mode[mode_id]['hn_full']['tf']=True
-        data_mode[mode_id]['hn_full']['seg_dend']='full'
-
-        data_mode[mode_id]['hn_nfull']={}
-        data_mode[mode_id]['hn_nfull']['path']='dest_spine_path' 
-        data_mode[mode_id]['hn_nfull']['tf']=True
-        data_mode[mode_id]['hn_nfull']['seg_dend']='nfull'
-
-
-
-        data_mode[mode_id]['path_train']['dest_spine_path_pre_init']=self.dest_spine_path_pre_init
-        data_mode[mode_id]['path_train']['data_train_path']=data_shaft_train_path
-        data_mode[mode_id]['path_train']['data_shaft_path']=data_shaft_vertices_center_path
-        data_mode[mode_id]['path_train']['data_spine_path_center']=dest_shaft_vertices_center_path_opt
-        data_mode[mode_id]['path_train']['dest_spine_path_center']=data_mode[mode_id]['path_train']['dest_spine_path'] 
  
+        # data_mode['pinn_dir_data_all']=list(set(data_mode['pinn_dir_data_all']))f'{dest_dir}_pre' 
+        # data_mode['model_sufix_all']=list(set(data_mode['model_sufix_all']))f'{data_dir}_pre', 
+        # self.model_sufix_all.extend([dest_sufix,data_sufix]) 
+        # self.model_sufix_all=list(set(self.model_sufix_all))
+        # self.pinn_dir_data_all.extend([data_dir,dest_dir])
+        # self.pinn_dir_data_all=list(set(self.pinn_dir_data_all))
+        self.model_sufix_all.update([dest_sufix, data_sufix])
+        self.pinn_dir_data_all.update([data_dir, dest_dir])
 
-
-        # data_mode['pinn_dir_data_all']=list(set(data_mode['pinn_dir_data_all'])) 
-        # data_mode['model_sufix_all']=list(set(data_mode['model_sufix_all'])) 
-        self.model_sufix_all.extend([dest_sufix,data_sufix]) 
-        self.model_sufix_all=list(set(self.model_sufix_all))
-        self.pinn_dir_data_all.extend([data_dir,f'{data_dir}_pre',dest_dir,f'{dest_dir}_pre'])
-        self.pinn_dir_data_all=list(set(self.pinn_dir_data_all))
 
         return data_mode
 
  
 
-def get_model_test(path_heads,pre_portion,dnn_modes):
+
+
+def get_model_test(path_heads,pre_portion,dnn_modes,path_list):
     modes={val:{} for val in path_heads}
     configs=get_configs()
-    dmode = get_data_mode(pre_portion=pre_portion) 
+    dmode = get_data_mode(pre_portion=pre_portion,path_list=path_list) 
 
     for val in path_heads:
         ids,name=0,'mode0'  

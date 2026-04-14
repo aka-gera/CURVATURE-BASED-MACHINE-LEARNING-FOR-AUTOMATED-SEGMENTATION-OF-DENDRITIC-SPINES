@@ -12,8 +12,9 @@ def process_appr_vs_true(mp, count_appr, appr_index_data, true_index_data,iou_th
     for ii,appr_index in appr_index_data.items():   
         for jj, true_index in true_index_data.items():
             inter = appr_index.intersection(true_index)
-            unio = appr_index.union(true_index) 
+            unio = appr_index.union(true_index)  
             iou=len(inter) / len(unio)
+            dice=2*len(inter) /(len(appr_index)+len(true_index))
             if iou>=iou_thre:
                 if jj not in mp[ii]['true']: 
                     mp[ii]['true'].append(jj)
@@ -23,9 +24,11 @@ def process_appr_vs_true(mp, count_appr, appr_index_data, true_index_data,iou_th
                 new_indices = unio.difference(mp[ii]['index'])   
                 mp[ii]['index'].extend(new_indices)  
                 mp[ii]['iou'].append(iou)
+                mp[ii]['dice'].append(dice)
         if len(mp[ii]['iou'])==0:
             # print(ii,'fail',mp[ii]['iou'],len(inter))
             mp[ii]['iou'].append(0)
+            mp[ii]['dice'].append(0)
             mp[ii]['true'].append(-1)
     return mp
 
@@ -125,7 +128,10 @@ class iou_train(get_name,get_param):
                 jj: set(np.loadtxt(os.path.join(path_true, f'{self.name_spine_index}_{jj}.txt'), dtype=int))
                 for ii,jj in enumerate(self.count_true)
             }
-
+        # print('-------self.appr_index_data-------',self.appr_index_data)
+        # print('--------------',self.true_index_data)
+        # print('--------count true------',self.count_true)
+        # print('------path_true-----', path_true)
 
         
     def get_mapping(self,save=None,iou_thre=None):
@@ -143,6 +149,8 @@ class iou_train(get_name,get_param):
                     'appr': [ii],
                     'iou': [],
                     'iou_union':[],
+                    'dice': [],
+                    'dice_union':[],
                     'index': [],
                 } for ii in self.count_appr_tmp
             }
@@ -195,29 +203,31 @@ class iou_train(get_name,get_param):
                     true_union_all.append(jj)
             if len(true_union)>0:
                 iou_union=len(set(appr_union).intersection(set(true_union)))/len(set(appr_union).union(set(true_union))) if (mp_results[ii]['true'][0]>=0) else 0
+                dice_union=2*len(set(appr_union).intersection(set(true_union)))/(len(set(appr_union))+len(set(true_union))) if (mp_results[ii]['true'][0]>=0) else 0
                 # mp_results[ii]['iou_union'].append(iou_union)
                 # for yty in mp_results[ii]['true']:
             else:
-                iou_union=0
+                iou_union=0;dice_union=0
             mp_results[ii]['iou_union'].append(iou_union)
+            mp_results[ii]['dice_union'].append(dice_union)
         true_union_all_remain=list(set(self.count_true)-set(true_union_all))
         ii=0
         save_iou=[]
         save_iou_name=[]
         for ii in count_appr_tmp:
             if (len(mp_results[ii]['iou'])>0) and (mp_results[ii]['true'][0] <0) :
-                savd=[mp_results[ii]['appr'][0],mp_results[ii]['true'][0],1,1]
+                savd=[mp_results[ii]['appr'][0],mp_results[ii]['true'][0],1,1,1,1]
             elif (len(mp_results[ii]['true'])>0) and (len(mp_results[ii]['iou'])>0) and (len(mp_results[ii]['iou_union'])>0):
                 # print(ii,f'{self.dend_first_name}_sy{ii}',count_appr_tmp,mp_results)
-                savd=[mp_results[ii]['appr'][0],mp_results[ii]['true'][0],mp_results[ii]['iou'][0],mp_results[ii]['iou_union'][0]]
+                savd=[mp_results[ii]['appr'][0],mp_results[ii]['true'][0],mp_results[ii]['iou'][0],mp_results[ii]['iou_union'][0],mp_results[ii]['dice'][0],mp_results[ii]['dice_union'][0]]
             else:
-                savd=[0,0,0,0]
+                savd=[0,0,0,0,0,0]
             save_iou.append(savd)
             self.iou_dict[f'{self.dend_first_name}_sy{ii}']=savd
         ij=1
         for jj in true_union_all_remain:
-            save_iou.append([-1,jj,0,0])
-            self.iou_dict[f'{self.dend_first_name}_sy{ii+ij}']=[-1,jj,0,0]
+            save_iou.append([-1,jj,0,0,0,0])
+            self.iou_dict[f'{self.dend_first_name}_sy{ii+ij}']=[-1,jj,0,0,0,0]
             ij+=1
 
 
@@ -244,32 +254,39 @@ class iou_train(get_name,get_param):
             self.save_iou=np.array(save_iou,ndmin=2)
 
 
-    def get_iou_match(self,save=None,iou_thre=.7):
+    def get_iou_match(self,save=None,iou_thre=.7,dice_thre=.7):
         if (self.file_path is not None)  :
             vertices_0       = np.loadtxt(os.path.join(self.file_path, self.txt_vertices_0), dtype=float) 
-            intensity=np.zeros_like(vertices_0[:,0])  
+            intensity=np.zeros_like(vertices_0[:,0]);intensity_dice=np.zeros_like(vertices_0[:,0])  
             intensity_true=-1*np.ones_like(vertices_0[:,0]) 
             ht=0
             ol_0=[]
             for val in self.appr_index_data.values():
                 intensity[list(val)]=1
+                intensity_dice[list(val)]=1
                 ol_0.extend(list(val))
             ol_1=[]
             for val in self.true_index_data.values():
                 intensity[list(val)]=2
+                intensity_dice[list(val)]=2
                 intensity_true[list(val)]=ht
                 ol_1.extend(list(val))
                 ht+=1
             # print('ooop----------',self.save_iou) 
             if len(self.save_iou)>0:
                 vfv=self.save_iou[:,0][(self.save_iou[:,0]>=0)& (self.save_iou[:,1]>=0) &(self.save_iou[:,3]>=iou_thre)  ]
+                vfvvv=self.save_iou[:,0][(self.save_iou[:,0]>=0)& (self.save_iou[:,1]>=0) &(self.save_iou[:,5]>=dice_thre)  ]
                 print('ooop----------',vfv) 
-                iidix=[]
+                iidix=[];iidixyy=[]
                 for idx in vfv:
                     iidix.extend(self.appr_index_data[idx])
                 intensity[iidix]=3
+                for idx in vfvvv:
+                    iidixyy.extend(self.appr_index_data[idx])
+                intensity_dice[iidixyy]=3
             # intensity[list(set(ol_0).intersection(set(ol_1)))]=3
             np.savetxt(os.path.join(self.shaft_path_appr,f'spine_match.txt'),intensity, fmt="%d")
+            np.savetxt(os.path.join(self.shaft_path_appr,f'spine_match_dice.txt'),intensity_dice, fmt="%d")
             np.savetxt(os.path.join(self.shaft_path_appr,f'spine_annot.txt'),intensity_true, fmt="%d")
         
 

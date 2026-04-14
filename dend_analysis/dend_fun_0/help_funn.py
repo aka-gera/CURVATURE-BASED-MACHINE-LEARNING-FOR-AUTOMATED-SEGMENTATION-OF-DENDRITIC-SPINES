@@ -1074,7 +1074,7 @@ class dendrite_io:
         self.shaft_index=shaft_index
 
 
-    def node_to_txt(self, node, intensity_len, part=None, txt_save_file=None, itera_start=None, itera_end=None,pid=None,size_threshold=None,):
+    def node_to_txt(self, node, intensity_len, part=None, txt_save_file=None, itera_start=None, itera_end=None,pid=None,size_threshold=None,tf_mesh=False):
         txt_save_file = txt_save_file or self.txt_save_file
         part = part or self.part
         itera_start = itera_start or self.itera_start
@@ -1091,19 +1091,35 @@ class dendrite_io:
                 vertices_index_unique_i = node.children[ip].vertices_index_unique
                 intensity_org[vertices_index_i] = ip
                 tmpp.extend(vertices_index_i) 
+                # if tf_mesh:
+                #     mesh = trimesh.Trimesh(vertices=vertices_index_i, faces=faces_i, process=False)
+                #     # mesh.vertex_attributes[f'{part}_{self.name_index_unique}'] = vertices_index_unique_i
+                #     # if (self.skl_index is not None) and (self.skl_vertices is not None): 
+                #     #     skl_vertices_i=self.skl_vertices[list(set(self.skl_index[vertices_index_i] ))] 
+                #     #     mesh.vertex_attributes[f'{part}_{self.name_center}_curv'] = skl_vertices_i
+                #     mesh.export(os.path.join(txt_save_file, f'{part}_{self.name_index}_{ip}.obj'))
+                # else:
                 np.savetxt(os.path.join(txt_save_file, f'{part}_{self.name_index}_{ip}.txt'), vertices_index_i, fmt='%d') 
                 np.savetxt(os.path.join(txt_save_file, f'{part}_{self.name_faces}_{ip}.txt'), faces_i, fmt='%d') 
                 np.savetxt(os.path.join(txt_save_file, f'{part}_{self.name_index_unique}_{ip}.txt'), vertices_index_unique_i, fmt='%d') 
                 if (self.skl_index is not None) and (self.skl_vertices is not None): 
                     skl_vertices_i=self.skl_vertices[list(set(self.skl_index[vertices_index_i] ))]
                     np.savetxt(os.path.join( txt_save_file,f'{part}_{self.name_center}_curv_{ip}.txt'),skl_vertices_i, fmt='%f')
-
                 ctt.append(ip)  
         shaft_index= self.shaft_index if self.shaft_index is not None else list(set([ii for ii in range(intensity_len)])-set(tmpp)) 
 
         if (len(ctt)==0) and (self.vertices_index is not None):
                 ip=0
                 ctt=[0]
+                # if tf_mesh:
+                #     vertices_index_i=self.vertices_index;faces_i=self.faces;vertices_index_unique_i=[]
+                #     mesh = trimesh.Trimesh(vertices=vertices_index_i, faces=faces_i, process=False)
+                #     # mesh.vertex_attributes[f'{part}_{self.name_index_unique}'] = vertices_index_unique_i
+                #     # if (self.skl_index is not None) and (self.skl_vertices is not None): 
+                #     #     skl_vertices_i=self.skl_vertices
+                #         # mesh.vertex_attributes[f'{part}_{self.name_center}_curv'] = skl_vertices_i
+                #     mesh.export(os.path.join(txt_save_file, f'{part}_{self.name_index}_{ip}.obj'))
+                # else:
                 np.savetxt(os.path.join(txt_save_file, f'{part}_{self.name_index}_{ip}.txt'), self.vertices_index, fmt='%d') 
                 np.savetxt(os.path.join(txt_save_file, f'{part}_{self.name_faces}_{ip}.txt'), self.faces, fmt='%d') 
                 np.savetxt(os.path.join(txt_save_file, f'{part}_{self.name_index_unique}_{ip}.txt'), [], fmt='%d') 
@@ -1118,8 +1134,17 @@ class dendrite_io:
                 stop_index=1,
                 size_threshold=size_threshold,
             ) 
-            np.savetxt(os.path.join(txt_save_file, self.txt_shaft_index), nodee.children[0].vertices_index, fmt='%d') 
-            np.savetxt(os.path.join(txt_save_file, self.txt_shaft_faces), nodee.children[0].faces, fmt='%d') 
+            if tf_mesh:
+                vertices_index_i=nodee.children[0].vertices_index;faces_i=nodee.children[0].faces;vertices_index_unique_i=nodee.children[0].vertices_index_unique
+                mesh = trimesh.Trimesh(vertices=vertices_index_i, faces=faces_i, process=False)
+                # mesh.vertex_attributes[f'{part}_{self.name_index_unique}'] = vertices_index_unique_i
+                # if (self.skl_index is not None) and (self.skl_vertices is not None): 
+                    # skl_vertices_i=self.skl_vertices
+                    # mesh.vertex_attributes[f'{part}_{self.name_center}_curv'] = skl_vertices_i
+                mesh.export(os.path.join(txt_save_file, f'{part}_{self.name_index}_{ip}.obj'))
+            else:
+                np.savetxt(os.path.join(txt_save_file, self.txt_shaft_index), nodee.children[0].vertices_index, fmt='%d') 
+                np.savetxt(os.path.join(txt_save_file, self.txt_shaft_faces), nodee.children[0].faces, fmt='%d') 
             np.savetxt(os.path.join(txt_save_file, self.txt_shaft_index_unique), nodee.children[0].vertices_index_unique, fmt='%d')
 
 
@@ -1598,6 +1623,114 @@ def order_points_along_pca(vertices):
 
     return ordered_points, order, pc1
 
+
+
+def project_point_to_segment(p, a, b): 
+    ab = b - a
+    t = np.dot(p - a, ab) / np.dot(ab, ab)
+    t = np.clip(t, 0.0, 1.0)
+    return a + t * ab 
+
+def project_vertices_onto_skeleton(vertices, vertices_skeleton): 
+
+    vertices = np.asarray(vertices)
+    skl = np.asarray(vertices_skeleton)
+ 
+    segments = np.stack([skl[:-1], skl[1:]], axis=1)   
+
+
+    projected_vertices = np.zeros_like(vertices)
+    distances = np.zeros(len(vertices))
+ 
+    for i, p in enumerate(vertices):
+        best_dist = np.inf
+        best_point = None
+
+        for a, b in segments:
+            q = project_point_to_segment(p, a, b)
+            d = np.linalg.norm(p - q)
+            if d < best_dist:
+                best_dist = d
+                best_point = q
+
+        projected_vertices[i] = best_point
+        distances[i] = best_dist
+
+    return projected_vertices, distances
+
+
+
+
+
+
+class pca_projector:
+    def __init__(self, vertices): 
+        V = np.asarray(vertices) 
+        self.center = V.mean(axis=0) 
+        Vc = V - self.center 
+        U, S, Vt = np.linalg.svd(Vc, full_matrices=False) 
+        self.R = Vt
+ 
+    def project(self, points):
+        """
+        Project new points into the PCA space.
+        points: (N, 3)
+        """
+        P = np.asarray(points)
+        Pc = P - self.center
+        return Pc @ self.R.T
+ 
+
+    def unproject(self, points_pca):
+        """
+        Transform PCA-space points back to original coordinates.
+        """
+        Pp = np.asarray(points_pca)
+        return Pp @ self.R + self.center
+ 
+
+    def project_volume_coords(self, vol):
+        """
+        Project all voxel coordinates of a volume into PCA space.
+        Returns:
+            coords_pca : (M, 3) PCA coords of non-zero voxels
+            values     : voxel intensities
+        """
+        vol = np.asarray(vol)
+        z, y, x = np.where(vol > 0)
+
+        pts = np.vstack([x, y, z]).T
+        pts_pca = self.project(pts)
+
+        values = vol[z, y, x]
+        return pts_pca, values
+
+
+
+
+
+import os
+import shutil
+import stat
+
+def remove_directory(path):
+    for root, dirs, files in os.walk(path, topdown=False):
+        for file in files:
+            file_path = os.path.join(root, file)
+            os.chmod(file_path, stat.S_IWRITE)   
+            os.remove(file_path) 
+        for dir in dirs:
+            dir_path = os.path.join(root, dir)
+            os.chmod(dir_path, stat.S_IWRITE)
+            os.rmdir(dir_path) 
+    shutil.rmtree(path, ignore_errors=True)  
+
+def assign_if_none(self, **kwargs):
+    for arg, value in kwargs.items():
+        if value is None: 
+            value = getattr(self, arg, None) 
+        setattr(self, arg, value)
+  
 
 
 
