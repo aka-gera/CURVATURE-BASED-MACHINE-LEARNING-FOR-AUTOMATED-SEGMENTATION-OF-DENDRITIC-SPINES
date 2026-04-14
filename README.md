@@ -64,11 +64,20 @@ Once the browser window opens:
 
 ---
 
+
 ## Parameters & Options
 
 - **Model Architecture**  
-  Use the dropdowns to select the segmentation model.  
-  - `DNN-3` generally performs better.  
+  Use the first two dropdowns to select the segmentation model.
+  - The first dropdown selects the **type of model**:  
+    - **GINN** — *Geometric-Informed Neural Network*  
+    - **CNN** — *Convolutional Neural Network*  
+    - **GCN** — *Graph Convolutional Neural Network*  
+    - **cML** — *Classic Machine Learning*  
+  - The second dropdown selects the **feature class**.  
+    Selecting **GINN** with **DNN3** generally performs better.
+  - The third dropdown selects the **weights** used to classify spines.
+
 
 - **Smoothing (Smooth box)**  
   - Enable/disable smoothing for new meshes.  
@@ -124,13 +133,17 @@ python -m  gunicorn -w 4 -b 0.0.0.0:8050 wsgi:server -c gunicorn.conf.py
 
 ## Navigating the Interface
 
-- On the right of **DSA** (top corner), click on **“pinn”** if the **pinn** method was used.  
+- On the right side of **DSA** (top corner), click on one of the following to visualize the results:
+    - **GINN** — *Geometric-Informed Neural Network*  
+    - **CNN** — *Convolutional Neural Network*  
+    - **GCN** — *Graph Convolutional Neural Network*  
+    - **cML** — *Classic Machine Learning*  
 - Select the **architecture (DNN-nth)** that was used.  
 - Click to choose the **file parent name**.  
 - Click on the **mesh name**.  
-- A new page will appear with visualization options.  
+- A new page will appear with visualization options.
 
----
+ ---
 
 ## Visualization Options
 
