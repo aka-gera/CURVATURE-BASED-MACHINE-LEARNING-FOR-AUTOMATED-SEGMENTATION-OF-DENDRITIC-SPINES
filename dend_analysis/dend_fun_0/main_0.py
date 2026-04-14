@@ -84,12 +84,12 @@ def get_dict_param(nam='meshes',
                     path_heads=None,
                     ):
     path_heads_show=path_heads_show if path_heads_show is not None else [ 
+                'dnn_GINN_SM00000_LOC_AUG',
                 f'cnn_3UNet3D3_5000_hpcc_crop',
                 f'cnn_VGG16_FCN3D_5000_hpcc_crop',
                 f'cnn_VoxNetSeg_5000_hpcc_crop', 
                 'gcn_UNet_SM10000_LOC',
                 'cml_cML',
-                'dnn_GINN_SM00000_LOC_AUG',
     ]
     path_heads=path_heads if path_heads is not None else ['save',] 
 
@@ -606,8 +606,8 @@ class app_run_param:
         self.Input_id.append('upload-data')
 
  
-        for gval,gvali in zip(param['param_dropdown']['param'],param['param_dropdowni']['param']):
-            # print(gval,param[gval]['param'] )
+        for gval,gvali,mb in zip(param['param_dropdown']['param'],param['param_dropdowni']['param'],[0,-1,7,-1]):
+            # print(gval,param[gval]['param'] ) 
             dropdown_option = [
                 {'label': val, 'value': val, 'style': dropdown_options_style}
                 for   val in param[gval]['param'] 
@@ -626,7 +626,7 @@ class app_run_param:
             param[gval]['option'] = dcc.Dropdown(
                 options=dropdown_option,
                 id=idx,
-                value=dropdown_option[-1]['value'],   # default to first value
+                value=dropdown_option[mb]['value'],  
                 placeholder=f'Select {gval}',
                 style=box_style
             )
