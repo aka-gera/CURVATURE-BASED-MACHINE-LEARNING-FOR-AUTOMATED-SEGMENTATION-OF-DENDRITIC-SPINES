@@ -205,11 +205,16 @@ dash.register_page(
     order=0
 )
 
+
+path_heads_show = [ 
+                'dnn_GINN_SM00000_LOC_AUG', 
+    ]
 dict_param=get_dict_param(
                     n_step = 0,
                     # nam=nam,
                     # weight=weight,
                     # size_threshold=size_threshold,
+                    path_heads_show=path_heads_show,
                     )
 
 
