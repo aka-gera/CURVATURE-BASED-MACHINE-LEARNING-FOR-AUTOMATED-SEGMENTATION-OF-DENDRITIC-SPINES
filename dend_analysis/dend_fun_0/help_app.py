@@ -152,8 +152,24 @@ def start_server():
         #     script
         # ])
 
-        venv_python = os.path.abspath(os.path.join("..", "dsa_venv", "Scripts", "/usr/bin/python3"))
-        proc = subprocess.Popen([venv_python, "app/app.py"]) 
+        # venv_python = os.path.abspath(os.path.join("..", "dsa_venv", "Scripts", "/usr/bin/python3"))
+        # proc = subprocess.Popen([venv_python, '-m gunicorn -w 4 -b 0.0.0.0:8050 ', 'wsgi:server --timeout 1200 -c gunicorn.conf.py']) 
+        # proc = subprocess.Popen([venv_python, "app/app.py"]) 
+
+        venv_python = os.path.abspath(os.path.join("..", "dsa_venv", "bin", "python3"))
+
+        proc = subprocess.Popen([
+            venv_python,
+            "-m", "gunicorn",
+            "-w", "4",
+            "-b", "0.0.0.0:8050",
+            "wsgi:server",
+            "--timeout", "1200",
+            "-c", "gunicorn.conf.py"
+        ])
+
+
+
         return "Restart triggered!"
 
 
