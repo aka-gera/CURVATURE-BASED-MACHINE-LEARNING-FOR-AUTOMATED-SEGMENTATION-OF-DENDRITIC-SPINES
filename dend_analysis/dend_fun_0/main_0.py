@@ -1309,6 +1309,7 @@ class algorithm:
         model_sufix_dic['path_display']=path_display 
         self.model_sufix_dic=model_sufix_dic
         self.obj_org_path_dict = dend_data['obj_org_path_dict']
+        self.obj_org_path=dend_data['obj_org_path']
 
 
 
@@ -1812,6 +1813,7 @@ class algorithm:
             save_entry_exit['entry'].append(entry_name)
             save_entry_exit['exit'].append(exit_name)
             save_entry_exit['old_path'].append(entry_name)
+            resize =None
             if param['Resizing']['tf']: 
                 sze=param['Resizing']['param']['target_number_of_triangles_faction']
                 exit_name=f'resize_{sze}' if entry_name is None else f'{entry_name}_resize_{sze}'
@@ -1823,7 +1825,8 @@ class algorithm:
                 save_entry_exit['entry'].append(entry_name)
                 save_entry_exit['exit'].append(exit_name)
                 save_entry_exit['old_path'].append(entry_name)
-
+                resize=f'resize_{sze}'
+            action=None
             if param['Smooth']['tf']:
                 exit_name='smooth'  if entry_name is None else f'{entry_name}_smooth'
                 dend_cla.get_smooth( 
@@ -1837,20 +1840,29 @@ class algorithm:
                 save_entry_exit['entry'].append(entry_name)
                 save_entry_exit['exit'].append(exit_name)
                 save_entry_exit['old_path'].append(entry_name,)
+                action='smooth'
             for nn in ['entry','exit']:
                 if len(save_entry_exit[nn])==0:
                     save_entry_exit[nn].append(None) 
                     param['dendrite_pred']['param']['param_dic']['data']['get_dend_name']['old_path']='current'
                 save_entry_exit['old_path'].append('entry')
 
-
-
+ 
             if param['Resizing']['tf']: 
                 # param['dendrite_pred']['param']['param_dic']['data']['get_dend_name']['dict_dend_path']=dict(dict_dend_path='old',
                 #                                 drop_dic_name=save_entry_exit['exit'][-1])
                 param['dendrite_pred']['param']['param_dic']['data']['get_dend_name']['dict_dend_path']= 'old'
                 param['dendrite_pred']['param']['param_dic']['data']['get_dend_name']['drop_dic_name']= save_entry_exit['exit'][-1]
                 param['dendrite_pred']['param']['param_dic']['data']['get_dend_name']['old_path']='current'
+            nam_gen,nam_loc=self.obj_org_path.split('/')[-2:]
+            nam = "_".join(x for x in [nam_loc, action, resize] if x is not None)
+            drop_dic_name='_'.join(x for x in [nam_loc,action] if x is not None) 
+            if resize is not None:
+                param['dendrite_pred']['param']['param_dic']['data']['get_dend_name']=dict(dict_dend_path='old',
+                                                                    old_path=None,
+                                                                    drop_dic_name=drop_dic_name,
+                                                                    nam_gen=nam_gen,
+                                                                    )  
             mmnn=param['Skeleton']['param']['path']
             pathhh=f'{mmnn}'
             for entry_name,exit_name,old_path in zip(save_entry_exit['entry'],save_entry_exit['exit'],save_entry_exit['old_path']):
@@ -1861,8 +1873,8 @@ class algorithm:
                         # print('[[[[[[[--------------skl------------]]]]]]]',paath,entry_name,exit_name )
                         # print('[[[[[[[--------------skl------------]]]]]]]',param['dendrite_pred']['param']['param_dic']['data']['get_dend_name'] )
                         param_dend_name=deepcopy(param['dendrite_pred']['param']['param_dic']['data']['get_dend_name'])
-                        param_dend_name['drop_dic_name']=None
-                        param_dend_name['nam_gen']=None
+                        # param_dend_name['drop_dic_name']=None
+                        # param_dend_name['nam_gen']=None
                         # print('[[[[[[[--------------skl------------]]]]]]]',param_dend_name )
 
                         dict_wrap=param['Skeleton']['param']['dict_wrap']

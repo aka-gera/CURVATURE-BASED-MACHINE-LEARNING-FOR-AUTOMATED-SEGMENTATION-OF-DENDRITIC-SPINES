@@ -272,13 +272,16 @@ class dendrite_pred(train_test_tf,dendrite_manipulate):
 
         for  index,dend_name in enumerate(dend_names):
             self.get_dend_name(data_studied=data_studied,index=index,
-                                ** param_dic['data']['get_dend_name'] )
+                                ** param_dic['data']['get_dend_name'] ) 
+            cxc=param_dic['data']['get_dend_name']['dict_dend_path'] 
+            file_path_feat=self.dict_dend['path'][cxc]['file_path_feat']
+            file_path=self.dict_dend['path'][cxc]['file_path'] 
             dend_name=self.dend_name               
             gnam=get_name()
             metricss=gnam.metrics 
             metrics_name=[]
-            pid=pinn_data(file_path=self.file_path,
-                          file_path_feat=self.file_path_feat,
+            pid=pinn_data(file_path=file_path,
+                          file_path_feat=file_path_feat,
                             shaft_path=     self.path_file[path_train['dest_shaft_path']] ,
                             spine_path=     self.path_file[path_train['dest_spine_path']] , 
                             shaft_path_pre= self.path_file[path_train['data_shaft_path']] ,

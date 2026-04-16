@@ -22,22 +22,30 @@ def get_scatter_center(self,spine_path,shaft_vertices_center_path,vertices_00,sa
     mmm=count.ndim
     count=count if mmm==2 else count.reshape(-1,1)
     # vertices_center_shaft=np.loadtxt(os.path.join(shaft_vertices_center_path, self.txt_shaft_vertices_center),ndmin=2)
-    vertices_center_shaft=np.loadtxt(os.path.join(shaft_vertices_center_path, self.txt_skl_shaft_vertices),ndmin=2)
-    vertices_center_shaft=np.atleast_2d(vertices_center_shaft) 
-    shaft_vcv_vertices_center=np.loadtxt(os.path.join(shaft_vertices_center_path, self.txt_shaft_vcv_vertices_center),ndmin=2)
-    shaft_vcv_vertices_center=np.atleast_2d(shaft_vcv_vertices_center) 
+    p1=os.path.join(shaft_vertices_center_path, self.txt_skl_shaft_vertices)
+    if os.path.exists(p1):
+        vertices_center_shaft=np.loadtxt(p1,ndmin=2)
+        vertices_center_shaft=np.atleast_2d(vertices_center_shaft) 
+    p2=os.path.join(shaft_vertices_center_path, self.txt_shaft_vcv_vertices_center)
+    if os.path.exists(p2):
+        shaft_vcv_vertices_center=np.loadtxt(p2,ndmin=2)
+        shaft_vcv_vertices_center=np.atleast_2d(shaft_vcv_vertices_center) 
 
     scatter_spine = {}
     scatter_spine[0]=[]
     scatter_spine[0].append(hf.plotly_scatter(points= vertices_00, color='purple', size=3.3, name='dendrite',opacity=0.5))
 
     vertices_spine=np.loadtxt( os.path.join(shaft_vertices_center_path, f'shaft_index.txt'),dtype=int )
-    scatter_spine[0].append(hf.plotly_scatter(points=vertices_center_shaft, color='red', size=3.3, name='shaft skl'))
-    scatter_spine[0].append(hf.plotly_scatter(points=shaft_vcv_vertices_center, color='blue', size=5.3, name='shaft vcv'))
+    if os.path.exists(p1):
+        scatter_spine[0].append(hf.plotly_scatter(points=vertices_center_shaft, color='red', size=3.3, name='shaft skl'))
+    if os.path.exists(p2):
+        scatter_spine[0].append(hf.plotly_scatter(points=shaft_vcv_vertices_center, color='blue', size=5.3, name='shaft vcv'))
 
     scatter_spine[1]=[]
-    scatter_spine[1].append(hf.plotly_scatter(points=vertices_center_shaft, color='red', size=3.3, name='shaft skl'))
-    scatter_spine[1].append(hf.plotly_scatter(points=shaft_vcv_vertices_center, color='blue', size=5.3, name='shaft vcv'))
+    if os.path.exists(p1):
+        scatter_spine[1].append(hf.plotly_scatter(points=vertices_center_shaft, color='red', size=3.3, name='shaft skl'))
+    if os.path.exists(p2):
+        scatter_spine[1].append(hf.plotly_scatter(points=shaft_vcv_vertices_center, color='blue', size=5.3, name='shaft vcv'))
     scatter_spine[1].append(hf.plotly_scatter(points= vertices_00[vertices_spine], color='purple', size=3.3, opacity=0.2, name='shaft',  ))
     xco=0
     for i in range(count.shape[0]): 
@@ -220,7 +228,7 @@ class graph_cylinder_heatmap:
 
     def coordinates(self): 
         spine_path=self.spine_path   
-        count_path=os.path.join(spine_path, 'skl_shaft_vertices.txt')#os.path.join(self.file_path_feat, 'shaft_vertices_center.txt')
+        count_path=os.path.join(spine_path, 'shaft_vertices_center.txt')#os.path.join(self.file_path_feat, 'shaft_vertices_center.txt')
         # skl_shaft_distance=np.loadtxt(os.path.join(spine_path, 'skl_shaft_distance.txt'))
         if os.path.exists(count_path): 
             shaft_vertices_center=np.loadtxt(count_path, dtype=float)

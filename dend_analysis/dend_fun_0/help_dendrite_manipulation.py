@@ -492,6 +492,7 @@ class dendrite_manipulate(get_files,get_name):
             dend_path_exit_data =self.dend_path_org_exit
             dend_path_entry_data=self.dend_path_org_entry
  
+            vertices_00 = trimesh.load_mesh(os.path.join(dend_path_entry_data,f'{dend_name }.obj'),process=False ).vertices 
             skl_name=os.path.join(dend_path_entry_data,f'{self.dend_first_name}_skeleton.obj') 
             print('[[[[[[[[[[[[[vertices_00]]]]]]]]]]]]]',vertices_00.shape,dend_path_entry_data)
             if os.path.exists(skl_name): 
