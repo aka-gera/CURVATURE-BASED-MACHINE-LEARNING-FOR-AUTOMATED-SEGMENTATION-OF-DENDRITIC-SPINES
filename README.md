@@ -75,7 +75,9 @@ Once the browser window opens:
   - **GCN** — *Graph Convolutional Neural Network*  
   - **cML** — *Classic Machine Learning*  
 
-  To enable CNN, GCN, or cML models, follow the instructions provided **at the bottom of this page**.
+  To enable CNN, GCN, or cML models, follow the instructions provided [at the bottom of this page](#complete-model-with-cnn-gcn-cml).
+
+
 
 - **Feature Class**  
   The second dropdown selects the **feature class**.  
