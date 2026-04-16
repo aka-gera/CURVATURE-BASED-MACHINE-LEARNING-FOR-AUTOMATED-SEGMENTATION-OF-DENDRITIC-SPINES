@@ -228,8 +228,7 @@ class train_test_tf(get_files,get_name):
                                 kmean_n_run=kmean_n_run,
                                 kmean_max_iter=kmean_max_iter,
                                 param_dic=param_dic,
-                                    )
-                print('path doesnt exists ===----->>>[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]',base_features_list)
+                                    ) 
                 file_path_feat = self.file_path_feat if entry_name is None else self.file_path_feat_entry
                 file_path = self.file_path if entry_name is None else self.file_path_entry
                 pid.save_pinn_data(file_path_feat=file_path_feat,
@@ -764,8 +763,7 @@ class train_test_tf(get_files,get_name):
                                 kmean_n_run=kmean_n_run,
                                 kmean_max_iter=kmean_max_iter,
                                 param_dic=param_dic,
-                                    )
-                # print('path doesnt exists ===----->>>[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]',base_features_list)
+                                    ) 
                 file_path_feat = self.file_path_feat if entry_name is None else self.file_path_feat_entry
                 file_path = self.file_path if entry_name is None else self.file_path_entry
                 pid.save_pinn_data(file_path_feat=file_path_feat,
@@ -1974,8 +1972,7 @@ class train_test_tf(get_files,get_name):
                                 kmean_n_run=kmean_n_run,
                                 kmean_max_iter=kmean_max_iter,
                                 param_dic=param_dic,
-                                    )
-                print('path doesnt exists ===----->>>[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]',base_features_list)
+                                    ) 
                 file_path_feat = self.file_path_feat if entry_name is None else self.file_path_feat_entry
                 file_path = self.file_path if entry_name is None else self.file_path_entry
                 pid.save_pinn_data(file_path_feat=file_path_feat,

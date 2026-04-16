@@ -837,7 +837,8 @@ class get_files(get_name,get_param):
         self.path_heads_show = self.path_heads_show if self.path_heads_show is not None else path_heads
         self.dropdown_path_head_option = []
         for nam in self.path_heads_show:
-            self.dropdown_path_head_option.append({'label': self.model_sufix_dic['path_heads_dic'][nam], 'value': nam, 'style': self.dropdown_options_style})
+            # self.dropdown_path_head_option.append({'label': self.model_sufix_dic['path_heads_dic'][nam], 'value': nam, 'style': self.dropdown_options_style})
+            self.dropdown_path_head_option.append({'label': self.model_sufix_dic['path_heads_dic_sec'].get(nam,nam), 'value': nam, 'style': self.dropdown_options_style})
         self.dropdown_path_head_option.append({'label': f'Annotation',   'value': 'true', 'style': self.dropdown_options_style})
 
         self.dropdown_model_suf_option=[]

@@ -26,7 +26,7 @@ DTYPE='float32'
 DTYPE = tf.float32
   
 from dend_fun_0.get_path import assign_if_none,get_name,get_param,get_files,remove_directory,safe_id
-from dend_fun_0.side_bar import  get_text_dash_train,get_text_dash_all,get_text_dash_test,get_text_dash_dnn,get_text_dash_app
+from dend_fun_0.side_bar import  get_text_dash_train,get_text_dash_all,get_text_dash_test,get_text_dash_dnn,get_text_dash_app,get_text_dash_main_2
 device = "/GPU:0" if tf.config.list_physical_devices('GPU') else "/CPU:0"  
 from tqdm import tqdm 
 
@@ -719,21 +719,8 @@ class dendrite_pred(train_test_tf,dendrite_manipulate):
             with open(path_file_dir, 'wb') as f:
                 pickle.dump(dictr, f)
 
-
-            if data_studied =='train':
-                get_text_dash_train(user_inputt,
-                                    file_path_org,
-                                    dend_path_init,   
-                                    dend_name, 
-                                    dend_namessi, 
-                                    data_studied, 
-                                    model_sufix,
-                                    dash_pages_name,
-                                    disp_infos,
-                                    path_train=path_train,
-                                    index=index,)
-            else:
-                get_text_dash_test(user_inputt,
+ 
+            get_text_dash_test(user_inputt,
                                    file_path_org,
                                    dend_path_init,   
                                    dend_name, 
@@ -746,32 +733,10 @@ class dendrite_pred(train_test_tf,dendrite_manipulate):
                                     # path_file_sub=self.path_file_sub,
                                     index=index,
                                     model_type=model_type,
-                                   path_file_dir=path_file_dir,
-                                #    path_train=path_train,
-                                    pinn_dir_data=self.pinn_dir_data,
-                                    # dend_data=self.dend_data,
-                                    # obj_org_path_dict=obj_org_path_dict,
-                                    # model_sufix_dic=model_sufix_dic,
-                                    # path_display=self.path_display,
-                                    # path_display_dic=self.path_display_dic,
+                                   path_file_dir=path_file_dir, 
+                                    pinn_dir_data=self.pinn_dir_data, 
                                     
-                                   )
-            # id_name_end=self.dend_path_inits[index]#safe_id(self.dend_path_inits[index])
-            # dash_pages_path=os.path.join('/',self.dash_pages_path,f'dsa_{self.model_type}_{self.model_sufix}_{id_name_end}.py')
-            # dash_pages_path=f'{dash_pages_path}'
-            # page_dir_txt=os.path.join(self.data_studied,self.model_type,self.model_sufix,id_name_end)
-            # page_dir_txt=page_dir_txt.replace('_','-').replace('\\','/').lower()
-            # get_text_dash_all(  
-            #                     page_name=f'{id_name_end}',
-            #                     page_dir_txt=page_dir_txt,
-            #                     dash_pages_path=dash_pages_path,
-            #                     disp_infos=False,
-            #                     path_train=None, 
-            #                     path_file=None, 
-            #                     pinn_dir_data=None,
-            #                     dend_data=None,
-            #                     index=None,
-            #                     ) 
+                                   ) 
  
             forbidden_page=[f'/{os.path.join(self.data_studied,nn)}/' for nn in self.path_heads]
             forbidden_page.extend(['/dsa','/dsa/test',])
@@ -782,14 +747,25 @@ class dendrite_pred(train_test_tf,dendrite_manipulate):
                             disp_infos=False, 
                             head_navbar=model_sufix_dic['head_navbar'],
                             forbidden_page = tuple(list(set(forbidden_page))),
-                            forbidden_endswith='-data-',
+                            # forbidden_endswith='-data-', 
                             )
 
+            # print('[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]',model_sufix_dic['head_navbar'])
+            # print('[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]',model_sufix_dic['head_navbar'])
 
+            dash_pages_path=os.path.join('/',self.dash_pages_path, f'Main_2.py')
+            get_text_dash_main_2(
+                    page_name="DSA",
+                    page_dir_txt="DSA-2",
+                    dash_pages_path=dash_pages_path,
+                    disp_infos=False, 
+                path_heads_show=model_sufix_dic['path_heads_show'],
+                categories=model_sufix_dic['categories'],
+                path_display=model_sufix_dic['path_display'],
+                )
 
-
-
-            page_name=self.model_sufix_dic['path_heads_dic'][self.model_type] #safe_id(self.dend_path_inits[index])
+            # page_name=self.model_sufix_dic['path_heads_dic'][self.model_type] #safe_id(self.dend_path_inits[index])
+            page_name= self.model_sufix_dic['path_heads_dic_sec'].get(self.model_type,self.model_type)
             dash_pages_path=os.path.join('/',self.dash_pages_path,self.data_studied, f'{self.model_type}_data.py')
             dash_pages_path=f'{dash_pages_path}'
             page_dir_txt=os.path.join(self.data_studied,self.model_type  ) 

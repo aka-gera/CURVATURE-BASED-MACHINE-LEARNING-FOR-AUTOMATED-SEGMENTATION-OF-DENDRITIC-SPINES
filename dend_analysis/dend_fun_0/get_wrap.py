@@ -3,7 +3,7 @@ import os
 import numpy as np
 
  
-import trimesh,pymeshlab 
+import trimesh 
 from dend_fun_0.obj_get import  Obj_to_coord
 
 
@@ -24,6 +24,7 @@ def get_wrap(self,
                     dend_name=None,
                     new_data=True,
                     ):
+    import  pymeshlab 
     disp_infos=disp_infos or self.disp_infos
     file_path  = file_path or self.file_path
     spine_path = spine_path or self.spine_path
@@ -37,10 +38,7 @@ def get_wrap(self,
  
 
     ms = pymeshlab.MeshSet()  
-    ms.add_mesh(pymeshlab.Mesh(vertex_matrix=vertices_00, face_matrix=faces) )
-    # ms.apply_filter('generate_alpha_wrap',  
-    #                 alpha_fraction=alpha_fraction, 
-    #                 offset_fraction=offset_fraction)
+    ms.add_mesh(pymeshlab.Mesh(vertex_matrix=vertices_00, face_matrix=faces) ) 
     
     ms.apply_filter(
         'generate_alpha_wrap', 
@@ -53,11 +51,7 @@ def get_wrap(self,
     vertices_shaft_wrap = mesh_shaft_wrap.vertex_matrix()
     faces_shaft_wrap= mesh_shaft_wrap.face_matrix()
     mesh_shaft_wrap = trimesh.Trimesh(vertices=vertices_shaft_wrap,faces=faces_shaft_wrap)
-    mesh_shaft_wrap.export(os.path.join(dend_path_exit ))
-    # np.savetxt(os.path.join(file_path, 'vertices_wrap.txt'),mesh_shaft_wrap.vertices, fmt='%f')
-    # np.savetxt(os.path.join(file_path, 'faces_wrap.txt'),mesh_shaft_wrap.faces, fmt='%d')
-
-
+    mesh_shaft_wrap.export(os.path.join(dend_path_exit )) 
 
 def get_wrap_full(mesh_path_name_entry=None,
                   mesh_path_name_exit=None,
@@ -71,6 +65,7 @@ def get_wrap_full(mesh_path_name_entry=None,
     else:
         raise('No mesh detected')
 
+    import  pymeshlab 
  
 
     ms = pymeshlab.MeshSet()  
@@ -93,18 +88,12 @@ def get_wrap_full(mesh_path_name_entry=None,
         return mesh_path_name_exit
     
 
- 
-
-import numpy as np
-import trimesh
-import open3d as o3d
-'''
-'''
-
+  
 def get_wrap_o3d(vertices, faces, number_of_points=8000, radius=0.9, max_nn=30):
     # Build trimesh
     mesh = trimesh.Trimesh(vertices=vertices, faces=faces, process=False)
 
+    import open3d as o3d
     # Convert to Open3D mesh
     o3d_mesh = o3d.geometry.TriangleMesh()
     o3d_mesh.vertices = o3d.utility.Vector3dVector(mesh.vertices)
@@ -135,13 +124,7 @@ def get_wrap_o3d(vertices, faces, number_of_points=8000, radius=0.9, max_nn=30):
         linear_fit=False,
         n_threads=1,
     )
-
-    # # Remove low-density vertices (cleanup)
-    # densities = np.asarray(densities)
-    # keep_mask = densities > np.quantile(densities, 0.05)
-    # keep_indices = np.where(keep_mask)[0]
-    # mesh_poisson = mesh_poisson.select_by_index(keep_indices)
-
+ 
     return np.asarray(mesh_poisson.vertices), np.asarray(mesh_poisson.triangles)
 
 
@@ -149,8 +132,7 @@ def get_wrap_o3d(vertices, faces, number_of_points=8000, radius=0.9, max_nn=30):
 
 import numpy as np
 import trimesh
-import open3d as o3d
-import pymeshlab
+import open3d as o3d 
 
 def get_alpha_wrap(vertices, faces, 
                     voxel_resolution=128, 
@@ -164,6 +146,7 @@ def get_alpha_wrap(vertices, faces,
                     alpha_fraction=1.02,
                     offset_fraction=1.00):
     from dend_fun_2.help_pinn_data_fun import mesh_resize
+    import  pymeshlab 
 
     # Build mesh
     mesh = trimesh.Trimesh(vertices=vertices, faces=faces, process=False)
@@ -193,10 +176,7 @@ def get_alpha_wrap(vertices, faces,
 
 
 
-
-
-import numpy as np
-import trimesh
+ 
 
 class build_mesh:
     def __init__(self, points=None):
@@ -204,10 +184,7 @@ class build_mesh:
         self.points = self.sort_points_into_loop(self.points)
         self.centroid = self.points.mean(axis=0)
         self.u, self.v = self.compute_pca_axes(self.points)
-
-    # ---------------------------------------------------------
-    # PCA utilities
-    # ---------------------------------------------------------
+ 
     def compute_pca_axes(self, pts):
         X = pts - pts.mean(axis=0)
         C = np.cov(X.T)
@@ -216,10 +193,7 @@ class build_mesh:
         u = eigvecs[:, idx[-1]]
         v = eigvecs[:, idx[-2]]
         return u, v
-
-    # ---------------------------------------------------------
-    # Loop sorting
-    # ---------------------------------------------------------
+ 
     def sort_points_into_loop(self, pts):
         c = pts.mean(axis=0)
         X = pts - c
@@ -229,10 +203,7 @@ class build_mesh:
         angles = np.arctan2(y, x)
         order = np.argsort(angles)
         return pts[order]
-
-    # ---------------------------------------------------------
-    # Projection utilities
-    # ---------------------------------------------------------
+ 
     def project_to_plane(self, pts):
         X = pts - self.centroid
         x = np.dot(X, self.u)
@@ -243,19 +214,13 @@ class build_mesh:
         x = pts2d[:, 0]
         y = pts2d[:, 1]
         return self.centroid + np.outer(x, self.u) + np.outer(y, self.v)
-
-    # ---------------------------------------------------------
-    # Loop translation
-    # ---------------------------------------------------------
+ 
     def translate_loop(self, pts, dt):
         dirs = pts - self.centroid
         norms = np.linalg.norm(dirs, axis=1, keepdims=True)
         dirs_norm = dirs / norms
         return pts + dirs_norm * dt
-
-    # ---------------------------------------------------------
-    # Build triangle faces between loops
-    # ---------------------------------------------------------
+ 
     def build_loft_faces(self, num_loops, pts_per_loop):
         faces = []
         for k in range(num_loops - 1):
@@ -272,15 +237,11 @@ class build_mesh:
                 faces.append([i0, j1, j0])
 
         return np.array(faces)
-
-    # ---------------------------------------------------------
-    # ⭐ NEW: Build cap using polygon normal + centroid offset
-    # ---------------------------------------------------------
+ 
     def build_cap_from_loop(self, loop, offset):
         loop = np.asarray(loop)
         n = len(loop)
-
-        # 1. Compute polygon normal (Newell's method)
+ 
         normal = np.zeros(3)
         for i in range(n):
             p0 = loop[i]
@@ -402,8 +363,7 @@ class build_mesh:
             n = len(self.points)
             current_loop = smoothed_vertices[-n:].copy() 
             self.centroid = current_loop.mean(axis=0)
-
-            # store loop
+ 
             loops.append(current_loop)
  
         final_offset_mesh = mesh_from_points_with_offset_centroid(current_loop, offset=offset)
@@ -417,11 +377,7 @@ class build_mesh:
 
 def mesh_from_points_with_offset_centroid(points, offset=0.1):
     points = np.asarray(points)
-    n = len(points)
-    # print('[[[[[[[[[]]]]]]]]]',n)
-    # assert n >= 3,  
-
-    # 1. Compute centroid
+    n = len(points) 
     centroid = points.mean(axis=0)
  
     normal = np.zeros(3)
@@ -430,14 +386,12 @@ def mesh_from_points_with_offset_centroid(points, offset=0.1):
         p1 = points[(i + 1) % n]
         normal += np.cross(p0, p1)
     normal = normal / np.linalg.norm(normal)
-
-    # 3. Offset centroid
+ 
     centroid_offset = centroid + offset * normal
  
     vertices = np.vstack([points, centroid_offset])
     c_idx = len(vertices) - 1
-
-    # 5. Create triangles (fan)
+ 
     faces = []
     for i in range(n):
         j = (i + 1) % n

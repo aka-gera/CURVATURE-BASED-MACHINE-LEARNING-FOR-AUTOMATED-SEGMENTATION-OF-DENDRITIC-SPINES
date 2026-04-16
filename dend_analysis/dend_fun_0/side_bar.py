@@ -220,6 +220,100 @@ def get_dnn(page_dir,page_container,forbidden=None,):
     )
 ])
 
+def get_text_dash_main_2(
+        page_name,
+        page_dir_txt,
+        dash_pages_path,
+        disp_infos=False, 
+    path_heads_show=None,
+    categories=None,
+    path_display=None
+    ):
+
+    code_content = f""" 
+from dash import callback
+import sys,os,dash
+ 
+sys.path.append(os.path.abspath(os.getcwd()))
+
+from dend_fun_0.help_app import DSAPage
+
+dash.register_page(
+    __name__,
+    title="{page_name}",
+    name="Prediction",
+    path="/{page_dir_txt}",
+    order=0
+)
+
+path_heads_show= {path_heads_show}
+categories= {categories}
+path_display= {path_display}  
+
+# Instantiate page
+dsa_page = DSAPage(
+    path_heads_show=path_heads_show,
+    categories=categories,
+    path_display=path_display
+)
+
+layout = dsa_page.layout
+ 
+out, inp, st, prevent = dsa_page.param_toggle_all()
+
+@callback(
+    *out,
+    *inp,
+    *st,
+    prevent_initial_call=prevent
+)
+def toggle_all(*args):
+    return dsa_page.toggle_all(args)
+ 
+for gval in list(set(dsa_page.param["param_input"]["param"])):
+    out, inp, st, prevent = dsa_page.param_toggle_single(gval)
+
+    @callback(
+        out,
+        inp,
+        st,
+        prevent_initial_call=prevent
+    )
+    def toggle_single(n_clicks, is_open, gval=gval):
+        return dsa_page.toggle_single(n_clicks, is_open)
+ 
+out, inp, st, prevent = dsa_page.param_upload()
+
+@callback(
+    *out,
+    *inp,
+    *st,
+    prevent_initial_call=prevent
+)
+def callback_upload(*args):
+    return dsa_page.upload(args)
+ 
+out, inp, st, prevent = dsa_page.param_run_algorithm()
+
+@callback(
+    out,
+    inp,
+    st,
+    prevent_initial_call=prevent
+)
+def callback_run_algorithm(n_clicks, store_data):
+    if not n_clicks or not store_data:
+        raise dash.exceptions.PreventUpdate
+    return dsa_page.run_algorithm(store_data)
+"""
+
+    with open(dash_pages_path, "w") as file:
+        file.write(code_content)
+
+    if disp_infos:
+        print(f"Python file saved as {dash_pages_path}")
+
+
 
 
 def get_text_dash_dnn(page_name,page_dir_txt,dash_pages_path,
@@ -257,40 +351,24 @@ def layout():
         print(f"Python file saved as {dash_pages_path}")
 
 
- 
 
-def get_text_dash_app(dash_pages_path,
-                      disp_infos=False, 
-                      head_navbar=None,
-                      forbidden_page = "",
-                      forbidden_endswith=None, ):
 
-    code_content = f"""
-import os, sys, dash
-import dash_bootstrap_components as dbc
-from dash import Dash, html
-import webbrowser, threading
- 
-forbidden_page={forbidden_page}
-forbidden_endswith='{forbidden_endswith}'
-forbidden_endswith = None if forbidden_endswith in (None, 'None') else forbidden_endswith
 
- 
-app = Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.DARKLY])
-server = app.server
 
-def header_navbar(groups=None,forbidden_endswith=None,):
+
+
+def header_navbar(groups=None,forbidden_page=None,):
     if groups is None:
-        groups = {{
+        groups = {
             "DSA": "dsa",
             "DNN": "dnn", 
             "3D CNN": "cnn",
             "GCN": 'gcn',
             "class ML":'cml',
-        }}
+        } 
 
-    # Group pages by prefix
-    grouped = {{prefix: [] for prefix in groups.values()}}
+    # Group pages by prefix}{
+    grouped = {prefix: [] for prefix in groups.values()}
 
     for page in dash.page_registry.values():
         if page["path"].startswith(forbidden_page):
@@ -303,13 +381,13 @@ def header_navbar(groups=None,forbidden_endswith=None,):
         for label, prefix in groups.items():
             if last.startswith(prefix) and lasti.endswith(('data','test','train','dsa','2',)):
                 grouped[prefix].append(
-                    dbc.NavLink(
-                        name,
-                        href=page["path"],
-                        className="ms-2",
-                        active="exact"
+                        dbc.NavLink(
+                            name,
+                            href=page["path"],
+                            className="ms-2",
+                            active="exact"
+                        )
                     )
-                )
 
     horizontal_groups = []
 
@@ -320,7 +398,7 @@ def header_navbar(groups=None,forbidden_endswith=None,):
                     # BUTTON stays fixed in place
                     dbc.Button(
                         label,
-                        id=f"btn-{{prefix}}",
+                        id=f"btn-{prefix}",
                         color="secondary",
                         className="px-2 py-1",
                         n_clicks=0,
@@ -336,7 +414,7 @@ def header_navbar(groups=None,forbidden_endswith=None,):
                             ),
                             className="mt-1"
                         ),
-                        id=f"collapse-{{prefix}}",
+                        id=f"collapse-{prefix}",
                         is_open=False,
                     ),
                 ], className="d-flex flex-column", #",#
@@ -354,7 +432,7 @@ def header_navbar(groups=None,forbidden_endswith=None,):
  
             fluid=True,
             className="d-flex flex-row align-items-start p-0 m-0",
-            style={{"margin-right": "0.1cm"}} ,
+            style={"margin-right": "0.1cm"} ,
         ),
         dark=True,
         color="dark",
@@ -362,10 +440,33 @@ def header_navbar(groups=None,forbidden_endswith=None,):
     )
 
 
+ 
 
+def get_text_dash_app(dash_pages_path,
+                      disp_infos=False, 
+                      head_navbar=None,
+                      forbidden_page = "",
+                      forbidden_endswith=None,  ):
 
-head_navbar={head_navbar}
-header=header_navbar(head_navbar,forbidden_endswith)
+    code_content = f"""
+import os, sys, dash 
+sys.path.append(os.path.abspath(os.getcwd()))
+
+import dash_bootstrap_components as dbc
+from dash import Dash, html
+import webbrowser, threading
+from dend_fun_0.side_bar import header_navbar
+
+forbidden_page={forbidden_page}
+forbidden_endswith='{forbidden_endswith}'
+forbidden_endswith = None if forbidden_endswith in (None, 'None') else forbidden_endswith
+head_navbar={head_navbar} 
+
+ 
+app = Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.DARKLY])
+server = app.server 
+
+header=header_navbar(head_navbar,forbidden_page)
 
 
 

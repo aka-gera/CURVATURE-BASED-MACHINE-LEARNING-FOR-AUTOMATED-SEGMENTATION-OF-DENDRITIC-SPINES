@@ -22,21 +22,7 @@ from dend_fun_0.side_bar import  dnn_page
 
 file_path_parent=os.path.dirname(file_path_org)
 file_path_parent=os.path.join(file_path_parent,'meshes','meshes')
-os.makedirs(file_path_parent, exist_ok=True) 
-import subprocess
-# def restart_apps(process="gunicorn"):
-#     try: 
-#         subprocess.run(["pkill", "-f", process], check=False) 
-#         subprocess.Popen([
-#             "python3", "-m", "gunicorn.app.wsgiapp",
-#             "-w", "4",
-#             "-b", "0.0.0.0:8050",
-#             "wsgi:server",
-#             "-c", "gunicorn.conf.py"
-#         ])
-#         return "Restart triggered!"
-#     except Exception as e:
-#         return f"Error restarting: {e}"
+os.makedirs(file_path_parent, exist_ok=True)  
 import subprocess
 import platform
 
@@ -73,6 +59,28 @@ def restart_apps(process="gunicorn"):
 
 
 
+def get_navs_bar(path_heads_show,head_navbars=None): 
+    keys = ["dnn", "pinn", "cnn", "gcn", "cml"]
+    values = ["DNN", "DNN v.0", "3D CNN", "GCN", "class ML"]
+
+    head_navbars=head_navbars if head_navbars is not None else {
+                    "dnn": "DNN",
+                    "pinn":"DNN v.0" ,
+                    "cnn":"3D CNN" ,
+                    'gcn': "GCN",
+                    'cml':"class ML",
+                }
+        
+    head_navbar={
+                "DSA": "dsa",
+    }
+    category=['dsa']
+    for ipath in path_heads_show:
+        for key,val in head_navbars.items():
+            if ipath.startswith(key) and (val not in head_navbar): 
+                head_navbar[val]=key
+                category.append(key)
+    return head_navbar,category
 
 
 def get_dict_param(nam='meshes',
@@ -82,6 +90,7 @@ def get_dict_param(nam='meshes',
                     kmean_n_run=50,
                     path_heads_show=None,
                     path_heads=None,
+                    head_navbar=None,
                     ):
     path_heads_show=path_heads_show if path_heads_show is not None else [ 
                 'dnn_GINN_SM00000_LOC_AUG',
@@ -91,6 +100,15 @@ def get_dict_param(nam='meshes',
                 'gcn_UNet_SM10000_LOC',
                 'cml_cML',
     ]
+    nami=[ 
+                    'GINN',
+                    f'UNet',
+                    f'VGG16_FCN3D',
+                    f'VoxNetSeg', 
+                    'GCN',
+                    'cML',
+        ] 
+    head_navbar=head_navbar if head_navbar is not None else get_navs_bar(path_heads_show)
     path_heads=path_heads if path_heads is not None else ['save',] 
 
 
@@ -146,13 +164,7 @@ def get_dict_param(nam='meshes',
 
 
 
-    return dict(   
-        # dend_data = dend_data,  
-        # true_name = 'true_0', 
-        # dnn_mode = dnn_mode,
-        # model_type = model_type, 
-        # path_dir=path_dir,
-        # data_dir=data_dir, 
+    return dict(    
         nam=nam,
         n_step = n_step,
         weight=weight,
@@ -169,6 +181,7 @@ def get_dict_param(nam='meshes',
         path_list=path_list,
         path_heads=path_heads,
         path_dirs_weig=path_dirs_weig,
+        head_navbar=head_navbar, 
     )
 
     
@@ -197,6 +210,8 @@ def algorithm_param(nam='meshes',
                     path_heads_show=None,
                     path_shaft_dir=None,
                     path_dirs_weig=None,
+                    head_navbar=None,
+                    path_heads_show_nami=None,
                     # path_display_dic=None,
                     ):
     if param_dic is None: 
@@ -218,9 +233,7 @@ def algorithm_param(nam='meshes',
     if path_display is None:
         path_display=['dest_shaft_path','dest_spine_path',]
         path_display=['dest_spine_path_pre','dest_spine_path','dest_shaft_path']
-   
-    # print('[[[[[[[[[[[[---------------------------000--------]]]]]]]]]]]]')
-    # print(param_dic['data']['get_dend_name'])
+    
 
   
     smooth_tf=True
@@ -324,7 +337,7 @@ def algorithm_param(nam='meshes',
     param_input=['Smooth','Resizing','Spine-Shaft Segm', 'Morphologic Param','model_shap','clean_path_dir', ]
     param_inputbv=[ 'intensity_rhs','intensity_all','iou','roc','graph_center','dash_pages', 'cylinder_heatmap' ,'annotations',  'dendrite_pred' ,'rhs','skl','Skeleton',  ]
     param_input_save=[ 'spines_segss_old','spines_segss_old_2', 'clean_path_dir','get_training','skl_shaft_pred']
-    param_list=['param_dropdown','param_input','param_all', 'param_list','param_dropdowni','param_inputbv','path_list', 'path_dirs_weig']
+    param_list=['param_dropdown','param_input','param_all', 'param_list','param_dropdowni','param_inputbv','path_list', 'path_dirs_weig','head_navbar','path_heads_show_nami',]
     param_all=[]
     param_all.extend(param_dropdown)
     param_all.extend(param_input)
@@ -357,7 +370,22 @@ def algorithm_param(nam='meshes',
     param['dnn_mode']['param']=dnn_modes[0] 
     param['path_dir']['param']=path_dirs[0]
     param['path_dirs_weig']['param']=path_dirs_weig
-
+    param['head_navbar']['param']= head_navbar if head_navbar is not None else get_navs_bar(path_heads_show)
+    param['path_heads_show_nami']['param']= dict(zip([ 
+                                                    'dnn_GINN_SM00000_LOC_AUG',
+                                                    f'cnn_3UNet3D3_5000_hpcc_crop',
+                                                    f'cnn_VGG16_FCN3D_5000_hpcc_crop',
+                                                    f'cnn_VoxNetSeg_5000_hpcc_crop', 
+                                                    'gcn_UNet_SM10000_LOC',
+                                                    'cml_cML',
+                                        ],[ 
+                                                        'GINN',
+                                                        f'UNet',
+                                                        f'VGG16_FCN3D',
+                                                        f'VoxNetSeg', 
+                                                        'GCN',
+                                                        'cML',
+                                            ] ))
 
     
     param['Smooth']['param']=dict(
@@ -605,11 +633,14 @@ class app_run_param:
         self.path_list=param['path_list']['param']
         self.Input_id.append('upload-data')
 
- 
+        paramk=param['path_heads_show_nami']['param']
         for gval,gvali,mb in zip(param['param_dropdown']['param'],param['param_dropdowni']['param'],[0,-1,7,-1]):
             # print(gval,param[gval]['param'] ) 
+            # if gval=='path_heads':
+            #     mnm=[param['path_heads_show_nami']['param'].get(nn,nn) for nn in param[gval]['param']]
+
             dropdown_option = [
-                {'label': val, 'value': val, 'style': dropdown_options_style}
+                {'label': paramk.get(val,val) , 'value': val, 'style': dropdown_options_style}
                 for   val in param[gval]['param'] 
             ]
             # idx=f'dropdown_{gvali}_param'
@@ -1138,6 +1169,7 @@ class algorithm:
         pre_portion=self.pre_portion
         path_list=self.path_list 
         self.path_heads_true=path_heads_true
+        self.head_navbar=param['head_navbar']['param'] 
 
 
 
@@ -1163,6 +1195,7 @@ class algorithm:
             path_shaft_dir=None,
             model_type_data=None,
             data_dir=None,
+            head_navbar=None,
 
             ): 
         pre_portion=self.pre_portion
@@ -1195,8 +1228,7 @@ class algorithm:
                 modes[val][name][dirs]=[dmode.mode_id] 
                 for dirs in path_dirs_show:
                     data_dir_tmp=data_dir if data_dir is not None else dirs
-                    for ids, name in enumerate(model_sufix_show):
-                        # print(f"Finished {name}, dnn_modes={self.dnn_modes}")
+                    for ids, name in enumerate(model_sufix_show): 
                         cfg=configs[name]
                         cfg["data_sufix"]=cfg["dest_sufix"]=None
                         data_mode = dmode.test_opt( 
@@ -1210,12 +1242,11 @@ class algorithm:
                                                 **cfg
                                             ) 
                         modes[val][name][dirs]=[dmode.mode_id]  
-        model_sufix_dic={mm:{} for mm in ['model_sufix_dic','path','path_heads_show','path_heads_dic','model_sufix_dic_inverse','model_sufix_show','path_dirs_show','drop_dic']}
+        model_sufix_dic={mm:{} for mm in ['model_sufix_dic','path','path_heads_show','path_heads_dic','model_sufix_dic_inverse','model_sufix_show','path_dirs_show','drop_dic','path_heads_dic_sec']}
         model_sufix_dic['model_sufix_show']=[data_mode[modes[model_type][dnn_mode][path_dir][0]]['model_sufix'][0] for dnn_mode in  model_sufix_show]
         model_sufix_dic['model_sufix_dic'] ={data_mode[modes[model_type][dnn_mode][path_dir][0]]['model_sufix'][0] :dnn_mode for dnn_mode in  model_sufix_show}
         model_sufix_dic['model_sufix_dic']['save']='save'
-        model_sufix_dic['model_sufix_dic_inverse'] = {v: k for k, v in model_sufix_dic['model_sufix_dic'].items()} 
-        # print('[[[[[[[[[[lllllloooooolllll]]]]]]]]]]',model_sufix_show,model_sufix_dic['model_sufix_dic'],model_sufix_dic['model_sufix_show'])
+        model_sufix_dic['model_sufix_dic_inverse'] = {v: k for k, v in model_sufix_dic['model_sufix_dic'].items()}  
  
         configs=get_configs()
         fcgs={}
@@ -1255,16 +1286,10 @@ class algorithm:
                                                 seg_dend=dirs, 
                                                 **fcgs[name]
                                             )
-                        modes[val][name][dirs]=[dmode.mode_id] 
-                        # modes[val][dmode.mode_id]=name
-                        # print(f"Finished {name}, mode_id={dmode.mode_id}")
+                        modes[val][name][dirs]=[dmode.mode_id]  
         self.modes,self.data_mode,self.dmode=modes,data_mode,dmode 
         path_heads=self.path_heads 
-        param=self.param 
-        # mode_ids=modes[model_type][dnn_mode][path_dir] 
-        # true_keys=self.true_keys 
-        # print(f"heeeds===== {model_type}, mo---de_id={dnn_mode}")
-        # dend_data= gdas.part(nam)
+        param=self.param  
         path_display = path_display if path_display is not None else param['dendrite_pred']['param']['path_display']
  
 
@@ -1276,16 +1301,12 @@ class algorithm:
         result=result+['default'] 
         model_sufix_dic['path_heads_show']=path_heads_show  
         model_sufix_dic['path_dirs_show']=path_dirs_show
-
+        model_sufix_dic['path_heads_dic_sec']=param['path_heads_show_nami']['param']
         model_sufix_dic['path_heads_dic']={ke:va for ke,va in zip(path_headss,result)}  
-        model_sufix_dic['head_navbar']={
-                                        "DSA": "dsa",
-                                        "DNN": "dnn",
-                                        # "DNN v.0": "pinn",
-                                        "3D CNN": "cnn",
-                                        "GCN": 'gcn',
-                                        "class ML":'cml',
-                                    }
+        head_navbar=head_navbar if head_navbar is not None else get_navs_bar(path_heads_show) 
+        model_sufix_dic['head_navbar']=head_navbar[0]
+        model_sufix_dic['categories']=head_navbar[1]
+        model_sufix_dic['path_display']=path_display 
         self.model_sufix_dic=model_sufix_dic
         self.obj_org_path_dict = dend_data['obj_org_path_dict']
 
@@ -1326,12 +1347,14 @@ class algorithm:
             path_heads=None,
             nam=None,
             path_dirs_weig=None,
+            head_navbar=None,
             ): 
         param=self.param
         path_heads_show=path_heads_show if path_heads_show is not None else self.path_heads
         model_sufix_show=model_sufix_show if model_sufix_show is not None else self.dnn_modes 
         path_dirs_show=path_dirs_show if path_dirs_show is not None else self.path_dirs
         model_type_data=model_type_data if model_type_data is not None else model_type
+        head_navbar=head_navbar if head_navbar is not None else self.head_navbar
         self.data(   
                 exit_name=None,
                 entry_name=None, 
@@ -1351,6 +1374,7 @@ class algorithm:
                 path_dirs_show=path_dirs_show, 
                 data_dir=data_dir,
                 drop_dic=drop_dic, 
+                head_navbar=head_navbar,
                 ) 
         dend_data_tmp=self.dend_data_tmp
         pre_portion=self.pre_portion
@@ -1366,20 +1390,14 @@ class algorithm:
     
         time_start = time.time()
  
-
-        model_type11=model_type #if path_shaft_dir is None else path_shaft_dir.get('model_type',model_type)
-        path_dir11=path_dir  #if path_shaft_dir is None else   path_shaft_dir.get('path_dir',path_dir)
-        path_head_clean_=[False for item in range(len(mode_ids))]
-        path_head_clean_=[True if item <1 else False for item in range(len(mode_ids))]
-        for ixi,mode_id in enumerate(mode_ids):#data_mode.keys(): #
-            nhh=data_mode[mode_id]['model_sufix'] 
+ 
+        for ixi,mode_id in enumerate(mode_ids):#data_mode.keys(): # 
             model_sufix=data_mode[mode_id]['model_sufix'][0] 
 
 
-            mode_dnn1 =data_mode[mode_id]['model_init']
-            mode_dnn1=mode_dnn1 # if mode_dnn1 is not None else (mode_dnn1 if path_shaft_dir is None else path_shaft_dir.get('model_sufix',mode_dnn1))
+            mode_dnn1 =data_mode[mode_id]['model_init'] 
             mode_dnn11=model_sufix_dic['model_sufix_dic_inverse'].get(mode_dnn1,None)
-            path_shaft_dir=None if mode_dnn11 is None else f'{model_type11}_{mode_dnn11}_{path_dir11}'
+            path_shaft_dir=None if mode_dnn11 is None else f'{model_type}_{mode_dnn11}_{path_dir}'
 
 
             dend_cla=dendrite_pred(   
@@ -1562,12 +1580,14 @@ class algorithm:
             size_threshold=None,
             model_type_data=None, 
             data_dir=None,
+            head_navbar=None,
             ): 
         param=self.param
         path_heads_show=path_heads_show if path_heads_show is not None else self.path_heads_true
         model_sufix_show=model_sufix_show if model_sufix_show is not None else self.dnn_modes 
         path_dirs_show=path_dirs_show if path_dirs_show is not None else self.path_dirs
         model_type_data=model_type_data if model_type_data is not None else model_type
+        head_navbar=head_navbar if head_navbar is not None else self.head_navbar
         # model_type='true'
         self.pre_test_train(   
             train_test='train',
@@ -1585,6 +1605,7 @@ class algorithm:
             path_display_dic=path_display_dic, 
             path_shaft_dir=path_shaft_dir, 
             data_dir=data_dir,
+            head_navbar=head_navbar,
             )
         pre_portion=self.pre_portion
         path_list=self.path_list
@@ -1715,6 +1736,7 @@ class algorithm:
             model_type_data=None,
             data_dir=None,
             drop_dic=None,
+            head_navbar=None,
             ): 
         param=self.param
         path_heads_show=path_heads_show if path_heads_show is not None else self.path_heads_true
@@ -1736,9 +1758,8 @@ class algorithm:
             path_display_dic=path_display_dic, 
             path_shaft_dir=path_shaft_dir,  
             data_dir=data_dir,
-            )
-        pre_portion=self.pre_portion
-        path_list=self.path_list
+            head_navbar=head_navbar,
+            ) 
         data_mode=self.data_mode
         modes,data_mode,dmode=self.modes,self.data_mode,self.dmode
         self.model_sufix_dic['drop_dic']=drop_dic
@@ -1749,10 +1770,7 @@ class algorithm:
         path_heads=self.path_heads  
         obj_org_path_dict =self.obj_org_path_dict
         from copy import deepcopy
-
-
-        path_head_clean_=[False for item in range(len(mode_ids))]
-        path_head_clean_=[True if item <1 else False for item in range(len(mode_ids))]
+ 
         for ixi,mode_id in enumerate(mode_ids):#data_mode.keys(): # 
             model_sufix=data_mode[mode_id]['model_sufix'][0] 
             dend_cla=dendrite_pred(   
