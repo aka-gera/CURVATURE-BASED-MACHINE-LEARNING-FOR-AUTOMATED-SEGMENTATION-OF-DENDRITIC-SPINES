@@ -64,19 +64,26 @@ Once the browser window opens:
 
 ---
 
-
 ## Parameters & Options
 
 - **Model Architecture**  
-  Use the first two dropdowns to select the segmentation model.
-  - The first dropdown selects the **type of model**:  
-    - **GINN** — *Geometric-Informed Neural Network*  
-    - **CNN** — *Convolutional Neural Network*  
-    - **GCN** — *Graph Convolutional Neural Network*  
-    - **cML** — *Classic Machine Learning*  
-  - The second dropdown selects the **feature class**.  
-    Selecting **GINN** with **DNN3** generally performs better.
-  - The third dropdown selects the **weights** used to classify spines.
+  The first dropdown selects the **type of segmentation model**.  
+  **By default, only the GINN model is available.**
+
+  - **GINN** — *Geometric‑Informed Neural Network* (default)  
+  - **CNN** — *Convolutional Neural Network*  
+  - **GCN** — *Graph Convolutional Neural Network*  
+  - **cML** — *Classic Machine Learning*  
+
+  To enable CNN, GCN, or cML models, follow the instructions provided **at the bottom of this page**.
+
+- **Feature Class**  
+  The second dropdown selects the **feature class**.  
+  Selecting **GINN** with **DNN3** generally performs better.
+
+- **Weights Selection**  
+  The third dropdown selects the **weights** used to classify spines.
+
 
 
 - **Smoothing (Smooth box)**  
