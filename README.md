@@ -210,3 +210,35 @@ Features used in training/testing can be visualized:
 Additional saved models and datasets can be found at  
 [https://zenodo.org/records/19594000](https://zenodo.org/records/19594000)
 
+
+## Complete model with CNN, GCN, cML 
+
+```bash
+cd ~/Desktop/CURVATURE-BASED-MACHINE-LEARNING-FOR-AUTOMATED-SEGMENTATION-OF-DENDRITIC-SPINES
+wget "https://zenodo.org/records/19594000/files/model.zip?download=1" -O model.zip
+
+unzip -o model.zip
+
+rm model.zip
+
+```
+
+## Download training dataset
+
+```bash
+cd ~/Desktop/CURVATURE-BASED-MACHINE-LEARNING-FOR-AUTOMATED-SEGMENTATION-OF-DENDRITIC-SPINES
+wget "https://zenodo.org/records/19594000/files/model.zip?download=1" -O p21-dendrites.zip
+unzip -o p21-dendrites.zip
+rm p21-dendrites.zip
+
+```
+
+## Download testing dataset
+
+```bash
+cd ~/Desktop/CURVATURE-BASED-MACHINE-LEARNING-FOR-AUTOMATED-SEGMENTATION-OF-DENDRITIC-SPINES
+wget "https://zenodo.org/records/19594000/files/model.zip?download=1" -O neuropil_0.zip
+unzip -o neuropil_0.zip
+rm neuropil_0.zip
+
+```
