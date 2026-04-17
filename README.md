@@ -237,7 +237,7 @@ cd ~/Desktop/CURVATURE-BASED-MACHINE-LEARNING-FOR-AUTOMATED-SEGMENTATION-OF-DEND
 wget "https://zenodo.org/records/19594000/files/model.zip?download=1" -O model.zip
 unzip -o model.zip
 rm model.zip
-cp Main_2.py app/pages/
+cp dend_fun_0/Main_2.py app/pages/
 
 ```
 
