@@ -233,7 +233,7 @@ Additional saved models and datasets can be found at
 ## Complete model with CNN, GCN, cML 
 
 ```bash
-cd ~/Desktop/CURVATURE-BASED-MACHINE-LEARNING-FOR-AUTOMATED-SEGMENTATION-OF-DENDRITIC-SPINES
+cd ~/Desktop/CURVATURE-BASED-MACHINE-LEARNING-FOR-AUTOMATED-SEGMENTATION-OF-DENDRITIC-SPINES/dend_analysis
 wget "https://zenodo.org/records/19594000/files/model.zip?download=1" -O model.zip
 
 unzip -o model.zip
