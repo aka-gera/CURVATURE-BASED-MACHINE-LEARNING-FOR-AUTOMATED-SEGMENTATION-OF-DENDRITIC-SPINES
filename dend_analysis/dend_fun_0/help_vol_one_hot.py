@@ -1,69 +1,3 @@
-'''
-import tensorflow as tf
-from tensorflow.keras import layers, Model
-
-def DoubleConv3D(in_ch, out_ch):
-    return tf.keras.Sequential([
-        layers.Conv3D(out_ch, 3, padding="same", activation="relu"),
-        layers.Conv3D(out_ch, 3, padding="same", activation="relu")
-    ])
-
-class UNet3D(Model):
-    def __init__(self, n_classes=1):
-        super().__init__()
-
-        self.down1 = DoubleConv3D(1, 32)
-        self.down2 = DoubleConv3D(32, 64)
-        self.down3 = DoubleConv3D(64, 128)
-        self.down4 = DoubleConv3D(128, 256)
-
-        self.pool = layers.MaxPool3D(2)
-
-        self.middle = DoubleConv3D(256, 512)
-
-        self.up4 = layers.Conv3DTranspose(256, 2, strides=2)
-        self.conv4 = DoubleConv3D(512, 256)
-
-        self.up3 = layers.Conv3DTranspose(128, 2, strides=2)
-        self.conv3 = DoubleConv3D(256, 128)
-
-        self.up2 = layers.Conv3DTranspose(64, 2, strides=2)
-        self.conv2 = DoubleConv3D(128, 64)
-
-        self.up1 = layers.Conv3DTranspose(32, 2, strides=2)
-        self.conv1 = DoubleConv3D(64, 32)
-
-        self.out_conv = layers.Conv3D(n_classes, 1)
-
-    def call(self, x):
-        c1 = self.down1(x)
-        c2 = self.down2(self.pool(c1))
-        c3 = self.down3(self.pool(c2))
-        c4 = self.down4(self.pool(c3))
-
-        m = self.middle(self.pool(c4))
-
-        u4 = self.up4(m)
-        u4 = tf.concat([u4, c4], axis=-1)
-        u4 = self.conv4(u4)
-
-        u3 = self.up3(u4)
-        u3 = tf.concat([u3, c3], axis=-1)
-        u3 = self.conv3(u3)
-
-        u2 = self.up2(u3)
-        u2 = tf.concat([u2, c2], axis=-1)
-        u2 = self.conv2(u2)
-
-        u1 = self.up1(u2)
-        u1 = tf.concat([u1, c1], axis=-1)
-        u1 = self.conv1(u1)
-
-        return self.out_conv(u1)
-
-
-
-'''
  
 import numpy as np
 import tensorflow as tf
@@ -411,154 +345,7 @@ class vol_UNet3D(tf.keras.Model):
         return cls(**config)
     
 
-
-'''
-class vol_UNet3D(tf.keras.Model):
-    def __init__(self, filters=32, n_classes=3, **kwargs):
-        super().__init__(**kwargs)
-        self.filters = filters
-        # define layers...
-
-
-# class UNet3D(Model):
-#     def __init__(self, filters=32, n_classes=1):
-#         super().__init__()
-
-        self.conv1 = tf.keras.Sequential([
-            layers.Conv3D(filters, 3, padding="same", activation="relu"),
-            layers.Conv3D(filters, 3, padding="same", activation="relu")
-        ])
-        self.pool1 = layers.MaxPool3D()
-
-        self.conv2 = tf.keras.Sequential([
-            layers.Conv3D(filters*2, 3, padding="same", activation="relu"),
-            layers.Conv3D(filters*2, 3, padding="same", activation="relu")
-        ])
-        self.pool2 = layers.MaxPool3D()
-
-        self.conv3 = tf.keras.Sequential([
-            layers.Conv3D(filters*4, 3, padding="same", activation="relu"),
-            layers.Conv3D(filters*4, 3, padding="same", activation="relu")
-        ])
-        self.pool3 = layers.MaxPool3D()
-
-        self.conv4 = tf.keras.Sequential([
-            layers.Conv3D(filters*8, 3, padding="same", activation="relu"),
-            layers.Conv3D(filters*8, 3, padding="same", activation="relu")
-        ])
-        self.pool4 = layers.MaxPool3D()
-
-        self.middle = tf.keras.Sequential([
-            layers.Conv3D(filters*16, 3, padding="same", activation="relu"),
-            layers.Conv3D(filters*16, 3, padding="same", activation="relu")
-        ])
-
-        self.up4 = layers.Conv3DTranspose(filters*8, 2, strides=2, padding="same")
-        self.dec4 = tf.keras.Sequential([
-            layers.Conv3D(filters*8, 3, padding="same", activation="relu"),
-            layers.Conv3D(filters*8, 3, padding="same", activation="relu")
-        ])
-
-        self.up3 = layers.Conv3DTranspose(filters*4, 2, strides=2, padding="same")
-        self.dec3 = tf.keras.Sequential([
-            layers.Conv3D(filters*4, 3, padding="same", activation="relu"),
-            layers.Conv3D(filters*4, 3, padding="same", activation="relu")
-        ])
-
-        self.up2 = layers.Conv3DTranspose(filters*2, 2, strides=2, padding="same")
-        self.dec2 = tf.keras.Sequential([
-            layers.Conv3D(filters*2, 3, padding="same", activation="relu"),
-            layers.Conv3D(filters*2, 3, padding="same", activation="relu")
-        ])
-
-        self.up1 = layers.Conv3DTranspose(filters, 2, strides=2, padding="same")
-        self.dec1 = tf.keras.Sequential([
-            layers.Conv3D(filters, 3, padding="same", activation="relu"),
-            layers.Conv3D(filters, 3, padding="same", activation="relu")
-        ])
-
-        self.out_layer = layers.Conv3D(n_classes, 1, activation="sigmoid")
-
-    def call(self, x): 
-        x_padded, pads = pad_to_multiple(x, multiple=16)
-
-        c1 = self.conv1(x_padded)
-        p1 = self.pool1(c1)
-
-        c2 = self.conv2(p1)
-        p2 = self.pool2(c2)
-
-        c3 = self.conv3(p2)
-        p3 = self.pool3(c3)
-
-        c4 = self.conv4(p3)
-        p4 = self.pool4(c4)
-
-        m = self.middle(p4)
-
-        u4 = self.up4(m)
-        u4, c4 = crop_to_match(u4, c4)
-        u4 = tf.concat([u4, c4], axis=-1)
-        u4 = self.dec4(u4)
-
-        u3 = self.up3(u4)
-        u3, c3 = crop_to_match(u3, c3)
-        u3 = tf.concat([u3, c3], axis=-1)
-        u3 = self.dec3(u3)
-
-        u2 = self.up2(u3)
-        u2, c2 = crop_to_match(u2, c2)
-        u2 = tf.concat([u2, c2], axis=-1)
-        u2 = self.dec2(u2)
-
-        u1 = self.up1(u2)
-        u1, c1 = crop_to_match(u1, c1)
-        u1 = tf.concat([u1, c1], axis=-1)
-        u1 = self.dec1(u1)
-
-        mm = self.out_layer(u1)
-
-        # 2) crop back to original size
-        pred = crop_back(mm, pads)
-        return pred
-
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            "filters": self.filters
-        })
-        return config
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(**config)
-    
-'''
-
-
-
-'''
-class vol_VoxNetSeg(Model): 
-    def __init__(self, filters=32, n_classes=3, **kwargs):
-        super().__init__(**kwargs)
-        self.filters = filters
-        self.n_classes = n_classes 
-        # self.conv1 = layers.Conv3D(filters, 5, strides=1, padding="same", activation="relu")
-        # self.conv2 = layers.Conv3D(filters, 3, strides=1, padding="same", activation="relu")
-        # self.conv3 = layers.Conv3D(filters*2, 3, padding="same", activation="relu")
-        self.conv1 = layers.Conv3D(filters, 1,   activation="relu")
-        self.conv2 = layers.Conv3D(filters, 1, activation="relu")
-        self.conv3 = layers.Conv3D(filters*2, 1,  activation="relu")
-        self.out_conv = layers.Conv3D(n_classes, 1, activation="softmax")
-
-    def call(self, x):
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        return self.out_conv(x)
-'''
-
+ 
 import tensorflow as tf 
 from tensorflow.keras.layers import Conv3D, MaxPool3D, Dropout, Conv3DTranspose, Concatenate
 from tensorflow.keras.initializers import TruncatedNormal, VarianceScaling
@@ -613,25 +400,7 @@ class SegModel(Model):
             kernel_regularizer=self.reg_init,
             name=name
         )
-
-    # # ---- rewritten concat_tensors (no cropping) ----
-    # def concat_tensors(self, enc, dec):
-    #     return self.concat([enc, dec])
-
-    '''
-    def concat_tensors(self, prev_conv, up_conv):
-        p_c_s = prev_conv.shape
-        u_c_s = up_conv.shape
-        if  p_c_s[1] > u_c_s[1]:
-            up_conv_padded = tf.pad(up_conv, [[0, 0], [1, 0], [1, 0], [1, 0], [0, 0]], 'CONSTANT')
-            up_concat = tf.concat((prev_conv, up_conv_padded), 4)
-        else:
-            offsets = np.array([0, (p_c_s[1] - u_c_s[1]) // 2, (p_c_s[2] - u_c_s[2]) // 2,
-                                (p_c_s[3] - u_c_s[3]) // 2, 0], dtype=np.int32)
-            size = np.array([-1, u_c_s[1], u_c_s[2], u_c_s[3], p_c_s[4]], np.int32)
-            prev_conv_crop = tf.slice(prev_conv, offsets, size)
-            up_concat = tf.concat((prev_conv_crop, up_conv), 4)
-        return up_concat'''
+ 
     def concat_tensors(self, enc, dec):
         enc = enc[:, :dec.shape[1], :dec.shape[2], :dec.shape[3], :]
         return tf.concat([enc, dec], axis=-1)
@@ -927,52 +696,7 @@ class vol_FastFCN3D(Model):
     def from_config(cls, config):
         return cls(**config)
     
-
  
-
-
-
-# class model_choice: 
-#     def __init__(self):
-#         self.model_factory = {
-#             "vol_unet3d": vol_UNet3D,
-#             "vol_fastfcn3d": vol_FastFCN3D, 
-#             "vol_vgg16_fcn3d":vol_VGG16_FCN3D,
-#             # 'vol_VoxNet'.lower():vol_VoxNet,
-#             'vol_VoxNetSeg'.lower():vol_VoxNetSeg,
-#             'vol_2UNet3D2'.lower():vol_2UNet3D2,
-#             'vol_3UNet3D3'.lower():vol_3UNet3D3,
-#         }
-#         self.mskl_param = {
-#             "vol_unet3d": {'multiple':16,'margin':2},
-#             "vol_fastfcn3d":{'multiple':16,'margin':2},
-#             "vol_vgg16_fcn3d":{'multiple':32,'margin':2},
-#             'vol_VoxNetSeg'.lower():vol_VoxNetSeg,
-#             'vol_2UNet3D2'.lower():{'multiple':16,'margin':2},
-#             'vol_3UNet3D3'.lower():{'multiple':16,'margin':2},
-#         }
-
-#     def get_model(self, model_type, n_classes=3, **kwargs):
-#         model_type = model_type.lower()
- 
-#         for key, model_cls in self.model_factory.items():
-#             if model_type.startswith(key):
-#                 return model_cls(n_classes=n_classes, **kwargs) 
-#         raise ValueError(f"Unknown model type: {model_type}")
-
-#     def get_custom_objects(self, model_type):
-#         model_type = model_type.lower()
-
-#         for key, model_cls in self.model_factory.items():
-#             if model_type.startswith(key):
-#                 # Return the CLASS, not an instance
-#                 return {model_cls.__name__: model_cls} 
-#         raise ValueError(f"Unknown model type: {model_type}")
-
-
-
-
-
 
 class model_choice: 
     def __init__(self, model_type=None, n_classes=3):
@@ -1076,7 +800,7 @@ def get_dataset(volumes, masks, batch_size=1):
 
 def dice_loss(y_true, y_pred, eps=1e-6):
     y_true = tf.cast(y_true, tf.float32)
-    y_pred = tf.sigmoid(y_pred)  # convert logits → probabilities
+    y_pred = tf.sigmoid(y_pred)  
 
     intersection = tf.reduce_sum(y_true * y_pred)
     union = tf.reduce_sum(y_true) + tf.reduce_sum(y_pred)
@@ -1135,69 +859,6 @@ class LOSS:
         loss = 0.0
 
         for vol, mask,idx_original,wei in zip(self.volumes, self.masks,self.idx_originals,self.weight):
-
-            # vol = tf.convert_to_tensor(vol, dtype=tf.float32)
-            # mask = tf.convert_to_tensor(mask, dtype=tf.float32)
- 
-
-            # maskii=np.squeeze(mask)[
-            #             idx_original[:, 0],
-            #             idx_original[:, 1],
-            #             idx_original[:, 2]
-            #         ]
-        #     pred = model(vol)
-        #     print('============', pred.shape,)
-        #     pred = np.squeeze(pred)
-        #     print('============', pred.shape,)
-            # Build a mask of zeros
-            '''
-            maskii = tf.zeros_like(tf.squeeze(mask), dtype=tf.float32)
-
-            # Scatter 1s at the valid indices
-            maskii = tf.tensor_scatter_nd_update(
-                maskii,
-                idx_original,                 # coordinates
-                tf.ones((idx_original.shape[0],), dtype=tf.float32)
-            )
-
-            # Zero out everything not in idx_original
-            # pred = pred * maskii[None, ..., None]
-            predd = np.squeeze(pred)
-            # print('============', pred.shape,)
-            predd=predd[
-            idx_original[:, 0],
-            idx_original[:, 1],
-            idx_original[:, 2]
-        ] '''
-
-            # print(model(vol)[0, ..., 0].shape)
-            # print(pred.shape,mask.shape)
-            # predd =  tf.argmax(pred[0,...], axis=-1)[None,...,None]
-            # print(predd.shape) 
-
-            # print('============', pred.shape,mask.shape,vol.shape)
-            '''
-            idx_or=tf.convert_to_tensor(idx_original, dtype=tf.int32)
-            predd=pred[0,...,0]
-            predd=tf.gather_nd(predd, idx_or)#predd[idx_or[:, 0], idx_or[:, 1],idx_or[:, 2] ]
-            # predd=np.squeeze(pred)[idx_original[:, 0], idx_original[:, 1],idx_original[:, 2] ] 
-            # print('---------',predd)
-            # print("raw min/max:", tf.reduce_min(pred).numpy(), tf.reduce_max(pred).numpy())
-            # print(idx_original[:10]) 
-            flat = tf.reshape(pred, [-1])          # 1-D
-            vals, idx = tf.unique(flat)
-            tf.print("unique vals:", vals)
-
-            tf.print('==========predd==========',tf.reduce_min(predd), tf.reduce_max(predd))
-            tf.print('====================',tf.reduce_min(pred), tf.reduce_max(pred))
-            if tf.math.reduce_any(tf.math.is_nan(pred)):
-                tf.print("Prediction contains NaN")
-
-            if tf.math.reduce_any(tf.math.is_inf(pred)):
-                tf.print("Prediction contains Inf")
-
-''' 
-
  
             pred = model(vol)
 
@@ -1206,9 +867,7 @@ class LOSS:
                 ce = tf.keras.losses.categorical_crossentropy(mask, pred)
                 # print(ce.shape,'=====')
                 loss += tf.reduce_mean( idx_original *ce)
-            elif self.loss_mode == 'wbce':
-
-                # print('[[[[----------]]]]',mask.shape,pred.shape,vol.shape)
+            elif self.loss_mode == 'wbce': 
                 y_true = tf.cast(mask, tf.float32)
                 weightss = tf.reduce_sum(wei* y_true, axis=-1)
                 ce = tf.keras.losses.categorical_crossentropy(y_true, pred)
@@ -1268,8 +927,7 @@ def get_auc(model, mskls, rhs,adj=None,curv=None,get_model_one_hot=None,dend=Non
     if score and y_true:
         yy_true=np.vstack(y_true)
         y_score=np.vstack(score)
-        for label,(yy,sc,nm) in enumerate(zip(yy_true.T,y_score.T,['shaft','spine'])):
-            # print('=============',yy.shape)
+        for label,(yy,sc,nm) in enumerate(zip(yy_true.T,y_score.T,['shaft','spine'])): 
             fpr, tpr, _ = roc_curve(yy, y_score=sc) 
             auc_s[label]=auc(fpr, tpr)
  
@@ -1335,9 +993,7 @@ class model_metric:
 
         metrics = {mm: {c: None for c in self.n_classes} for mm in self.mmjj}
 
-        for k in self.n_classes:
-
-            # binary ground truth for class k
+        for k in self.n_classes: 
             yy = (y_true == k).astype(int)
             sc = y_score[:, k]
 

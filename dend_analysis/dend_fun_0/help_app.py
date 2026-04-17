@@ -79,42 +79,7 @@ def free_port(port=8050):
 
 
 
-
-def start_server(): 
-    system = platform.system()
-    print('[[[[[[[[[[]]]]]]]]]]', system)
-
-    if system == "Windows": 
-        venv_python = os.path.abspath(os.path.join("..", "dsa_venv", "Scripts", "python.exe")) 
-        proc = subprocess.Popen([
-            venv_python,
-            "run_app_win.py"
-        ])
-        msg = f"Waitress started (Windows) with PID {proc.pid}"
-
-    else:
-        # Use the SAME Python interpreter running this script
-        # python_exec = sys.executable
-
-        # proc = subprocess.Popen([
-        #     python_exec, "-m", "gunicorn.app.wsgiapp",
-        #     "-w", "4",
-        #     "-b", "0.0.0.0:8050",
-        #     "wsgi:server",
-        #     "-c", "gunicorn.conf.py"
-        # ])
-        # msg = f"Gunicorn started (Linux/Unix/macOS) with PID {proc.pid}" 
-        subprocess.run(["pkill", "-f", "python"], check=False)
-        subprocess.Popen([
-            "/usr/bin/python3", "app/app.py"
-        ])
-        msg="Restart triggered!"
-    return msg
-
-import subprocess
-import platform
-import os
-
+ 
 def start_server():
     system = platform.system()
     print('[[[[[[[[[[]]]]]]]]]]', system)
@@ -125,35 +90,7 @@ def start_server():
         return f"Waitress started (Windows) with PID {proc.pid}"
 
     else:
-        # The exact command you told me to run 
-        '''
-        subprocess.run(["pkill", "-f", "python"], check=False)
-        subprocess.Popen([
-            "/usr/bin/python3", "app/app.py"
-        ])
-        command = (
-            '/usr/bin/python3 -m gunicorn -w 4 -b 0.0.0.0:8050 ',
-            'wsgi:server --timeout 1200 -c gunicorn.conf.py'
-        )
-
-        subprocess.Popen([
-            command
-        ])
-'''
-        # # Escape quotes for AppleScript
-        # safe = command.replace('"', '\\"')
-
-        # # Open a NEW Terminal window and run the command
-        # script = f'tell application "Terminal" to do script "{safe}"'
-
-        # subprocess.Popen([
-        #     "osascript",
-        #     "-e",
-        #     script
-        # ])
-
-        # venv_python = os.path.abspath(os.path.join("..", "dsa_venv", "Scripts", "/usr/bin/python3"))
-        # proc = subprocess.Popen([venv_python, '-m gunicorn -w 4 -b 0.0.0.0:8050 ', 'wsgi:server --timeout 1200 -c gunicorn.conf.py']) 
+        # The exact command you told me to run  
         subprocess.run(["pkill", "-f", "python"], check=False)
 
         venv_python = os.path.abspath(os.path.join("..", "dsa_venv", "bin", "python3"))
@@ -428,20 +365,7 @@ class DSAPage:
                 weights=[[10., 0.81]],
             )
         objs_path_model=os.path.join(file_path_org,'model')
-        path_heads_show=[f for f in os.listdir(objs_path_model) if os.path.isdir(os.path.join(objs_path_model, f))]
-        # headd=[ 
-        #                 'dnn_GINN_SM00000_LOC_AUG',
-        #                 f'cnn_3UNet3D3_5000_hpcc_crop',
-        #                 f'cnn_VGG16_FCN3D_5000_hpcc_crop',
-        #                 f'cnn_VoxNetSeg_5000_hpcc_crop', 
-        #                 'gcn_UNet_SM10000_LOC',
-        #                 'cml_cML',
-        #     ]
-        # for nn in path_heads_show:
-        #     if nn not in headd:
-        #         headd.append(nn)
-        # ghhg={va:ke for ke,va in enumerate(headd)} 
-        # path_heads_show=[headd[ii] for ii in np.argmin(np.array([ghhg[ii] for ii in path_heads_show]))]
+        path_heads_show=[f for f in os.listdir(objs_path_model) if os.path.isdir(os.path.join(objs_path_model, f))] 
         path_heads_show=align_head(path_heads_show)
         print('[[[[[[[[[[[------------------]]]]]]]]]]]',path_heads_show)
         store_data = dict(
@@ -481,6 +405,9 @@ class DSAPage:
         nh = param["path_dir"]["param"]
         nhh = param["path_dirs_weig"]["param"][nh]
         param["Spine-Shaft Segm"]["param"]["weight"] = nhh
+
+        for val in ['get_pinn_features','get_skeleton','get_wrap','get_smooth']:
+            param['dendrite_pred']['param']['param_dic']['tf_restart'][val]=False   #True   # 
 
         gdas = get_data_all(names_dic=dend_names_chld, file_path_data=export_dir)
         dend_data = gdas.part(nam)

@@ -147,56 +147,6 @@ def unpool(X_pooled, idx, N):
     out = tf.zeros((N, F), dtype=X_pooled.dtype)
     return tf.tensor_scatter_nd_update(out, tf.expand_dims(idx, 1), X_pooled)
 
-
-# # ---------------------------------------------------------
-# # 4. Graph U-Net Model
-# # ---------------------------------------------------------
-# class gcn_GraphUNet(Model):
-#     def __init__(self,
-#                  channels=32,
-#                  k1=0.5,
-#                  k2=0.5,
-#                  n_classes=3,
-#                  dropout_rate=0.1):
-#         super().__init__()
-
-#         self.gcn1 = GCNLayer(channels, activation="relu")
-#         self.pool1 = TopKPool(k1)
-
-#         self.gcn2 = GCNLayer(channels, activation="relu")
-#         self.pool2 = TopKPool(k2)
-
-#         self.gcn3 = GCNLayer(channels, activation="relu")
-#         self.gcn4 = GCNLayer(n_classes, activation="softmax")
-
-#         self.dropout = Dropout(dropout_rate)
-
-#     def call(self, inputs, training=False):
-#         X = inputs["x"]
-#         A= inputs["a"] 
-
-#         # Encoder
-#         X1 = self.gcn1([X, A])
-#         X1 = self.dropout(X1, training=training)
-#         X1_p, A1_p, idx1 = self.pool1([X1, A])
-
-#         X2 = self.gcn2([X1_p, A1_p])
-#         X2 = self.dropout(X2, training=training)
-#         X2_p, A2_p, idx2 = self.pool2([X2, A1_p])
-
-#         # Decoder
-#         N2 = tf.shape(X2)[0]
-#         X3 = unpool(X2_p, idx2, N2)
-#         X3 = self.gcn3([X3, A1_p])
-
-#         N1 = tf.shape(X1)[0]
-#         X4 = unpool(X3, idx1, N1)
-#         out = self.gcn4([X4, A])
-
-#         return out  
-    
- 
- 
  
 @register_keras_serializable(package="Custom")
 class gcn_UNet(tf.keras.Model):
@@ -328,34 +278,7 @@ class model_choice:
 
         raise ValueError(f"Unknown model type: {model_type}")
 
-
-
-
-'''
-class model_choice: 
-    def __init__(self):
-        self.model_factory = {
-            "gcn_unet": gcn_UNet, 
-        }
-
-    def get_model(self, model_type, n_classes=2, **kwargs):
-        model_type = model_type.lower()
  
-        for key, model_cls in self.model_factory.items():
-            if model_type.startswith(key):
-                return model_cls(n_classes=n_classes, **kwargs) 
-        raise ValueError(f"Unknown model type: {model_type}")
-
-    def get_custom_objects(self, model_type):
-        model_type = model_type.lower()
-
-        for key, model_cls in self.model_factory.items():
-            if model_type.startswith(key):
-                # Return the CLASS, not an instance
-                return {model_cls.__name__: model_cls} 
-        raise ValueError(f"Unknown model type: {model_type}")
-
-'''
 
 
 class LOSS_simple():
@@ -394,20 +317,7 @@ class LOSS():
             for cu,rhs in zip(self.curv,self.rhs):
                 for rhi in range(rhs.shape[1]): 
                     loss+= tf.reduce_mean(tf.reduce_mean(tf.square(model(cu)[:,rhi]-rhs[:,rhi]))  )  
-
-        # elif self.loss_mode == 'bce': 
-        #     bce = tf.keras.losses.BinaryCrossentropy()  
-             
-        #     loss_tmp=1e10
-        #     for weig in self.weight:
-        #         loss=0
-        #         # print('lossssssscv-------',weig,self.adj)
-        #         for cu,rhs in zip(self.curv,self.rhs ):  
-        #             rhs0=model(cu) 
-        #             for rhi in range(rhs.shape[1]): 
-        #                 loss+= weig[rhi]*tf.reduce_mean(bce(rhs[:,rhi ],rhs0[:,rhi ] ) )
-        #         if loss<loss_tmp:
-        #             loss_tmp=loss
+ 
 
         elif self.loss_mode == 'bce': 
             bce = tf.keras.losses.BinaryCrossentropy()  

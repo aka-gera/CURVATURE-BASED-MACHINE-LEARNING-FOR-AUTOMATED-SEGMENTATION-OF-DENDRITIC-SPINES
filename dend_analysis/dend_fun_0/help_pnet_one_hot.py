@@ -11,56 +11,7 @@ np.random.seed(42)
 tf.random.set_seed(42)
 random.seed(42)
 import tensorflow as tf
-from tensorflow.keras import layers, Model
-'''
-class pnet_PointNet(Model):
-    def __init__(self, n_classes=2, **kwargs):
-        super().__init__(**kwargs)
-        self.n_classes = n_classes
-
-        # Shared MLP (Conv1D with kernel size 1)
-        self.mlp1 = layers.Conv1D(64, 1, activation="relu")
-        self.mlp2 = layers.Conv1D(128, 1, activation="relu")
-        self.mlp3 = layers.Conv1D(1024, 1, activation="relu")
-
-        # Global feature aggregation
-        self.global_pool = layers.GlobalMaxPooling1D()
-
-        # Fully connected layers
-        self.fc1 = layers.Dense(512, activation="relu")
-        self.fc2 = layers.Dense(256, activation="relu")
-        self.dropout = layers.Dropout(0.3)
-
-        # Output classifier
-        self.classifier = layers.Dense(n_classes,1, activation="softmax")
-
-    def call(self, x): 
-        x = self.mlp1(x)
-        x = self.mlp2(x)
-        x = self.mlp3(x)
-
-        x = self.global_pool(x)
-
-        x = self.fc1(x)
-        x = self.fc2(x)
-        x = self.dropout(x)
-
-        return self.classifier(x)
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            "n_classes": self.n_classes
-        })
-        return config
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(**config)
-
-import tensorflow as tf
-from tensorflow.keras import layers, Model
-'''
+from tensorflow.keras import layers, Model 
 
 
 @register_keras_serializable(package="Custom")
@@ -114,19 +65,7 @@ class pnet_PointNet(Model):
 
 
 
-
-
-
-
-
-
-
-
-#####################################################
-
-
-
-
+ 
 
 
 
@@ -522,8 +461,7 @@ class LOSS():
             bce = tf.keras.losses.BinaryCrossentropy()  
             loss=0 
             
-            loss_tmp=1e10
-            # for weig in self.weight:
+            loss_tmp=1e10 
             cce = tf.keras.losses.CategoricalCrossentropy()
 
             for weig in self.weight:
@@ -531,16 +469,7 @@ class LOSS():
 
                     rhs0 = model(cu)          # (1, N, C) 
 
-                    loss += cce(rhs, rhs0)
-
-            # for cu,rhs in zip(self.curv,self.rhs): 
-            #     # for rhi in range(rhs.shape[1]):weig[rhi]*
-            #     rhs0=model(cu) 
-            #     # predicted_labels = np.argmax(rhs0, axis=1) 
-            #     for rhi in range(rhs.shape[1]): 
-                    
-            #         print(rhs.shape, model(cu).shape,cu.shape)
-            #         loss+= tf.reduce_mean(bce(rhs[...,rhi ],rhs0[...,rhi ] ) )
+                    loss += cce(rhs, rhs0) 
                 if loss<loss_tmp:
                     loss_tmp=loss
             

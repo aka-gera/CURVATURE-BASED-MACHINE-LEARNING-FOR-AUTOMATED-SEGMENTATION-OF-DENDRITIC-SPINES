@@ -579,6 +579,7 @@ def algorithm_param(nam='meshes',
     param['dash_pages']['tf']=True 
     param['clean_path_dir']['tf']= False
 
+
     return param
  
 
@@ -1813,19 +1814,6 @@ class algorithm:
             save_entry_exit['entry'].append(entry_name)
             save_entry_exit['exit'].append(exit_name)
             save_entry_exit['old_path'].append(entry_name)
-            resize =None
-            if param['Resizing']['tf']: 
-                sze=param['Resizing']['param']['target_number_of_triangles_faction']
-                exit_name=f'resize_{sze}' if entry_name is None else f'{entry_name}_resize_{sze}'
-                dend_cla.get_resize(entry_names=[entry_name],
-                                    exit_names=[exit_name],
-                                    target_number_of_triangles_faction=sze,  
-                                    )
-                entry_name=exit_name
-                save_entry_exit['entry'].append(entry_name)
-                save_entry_exit['exit'].append(exit_name)
-                save_entry_exit['old_path'].append(entry_name)
-                resize=f'resize_{sze}'
             action=None
             if param['Smooth']['tf']:
                 exit_name='smooth'  if entry_name is None else f'{entry_name}_smooth'
@@ -1841,6 +1829,19 @@ class algorithm:
                 save_entry_exit['exit'].append(exit_name)
                 save_entry_exit['old_path'].append(entry_name,)
                 action='smooth'
+            resize =None
+            if param['Resizing']['tf']: 
+                sze=param['Resizing']['param']['target_number_of_triangles_faction']
+                exit_name=f'resize_{sze}' if entry_name is None else f'{entry_name}_resize_{sze}'
+                dend_cla.get_resize(entry_names=[entry_name],
+                                    exit_names=[exit_name],
+                                    target_number_of_triangles_faction=sze,  
+                                    )
+                entry_name=exit_name
+                save_entry_exit['entry'].append(entry_name)
+                save_entry_exit['exit'].append(exit_name)
+                save_entry_exit['old_path'].append(entry_name)
+                resize=f'resize_{sze}'
             for nn in ['entry','exit']:
                 if len(save_entry_exit[nn])==0:
                     save_entry_exit[nn].append(None) 
