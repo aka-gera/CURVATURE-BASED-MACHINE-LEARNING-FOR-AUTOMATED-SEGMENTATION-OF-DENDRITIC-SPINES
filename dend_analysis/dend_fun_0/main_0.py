@@ -212,6 +212,7 @@ def algorithm_param(nam='meshes',
                     path_dirs_weig=None,
                     head_navbar=None,
                     path_heads_show_nami=None,
+					wrap_method='alpha_wrap',
                     # path_display_dic=None,
                     ):
     if param_dic is None: 
@@ -293,7 +294,7 @@ def algorithm_param(nam='meshes',
                 tf_division=True, 
                 alpha_fraction=.8,
                 offset_fraction=0.800,
-                wrap_method='alpha_wrap',
+                wrap_method=wrap_method,
                     )
 
     param_get_segments=dict(
