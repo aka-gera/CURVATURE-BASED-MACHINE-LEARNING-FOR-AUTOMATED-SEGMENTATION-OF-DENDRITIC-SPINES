@@ -1351,6 +1351,7 @@ class algorithm:
             nam=None,
             path_dirs_weig=None,
             head_navbar=None,
+			wrap_method=None,
             ): 
         param=self.param
         path_heads_show=path_heads_show if path_heads_show is not None else self.path_heads
