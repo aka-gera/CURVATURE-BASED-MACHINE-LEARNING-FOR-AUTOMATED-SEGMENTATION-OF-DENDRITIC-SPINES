@@ -277,16 +277,27 @@ class get_name:
         self.inten_file_sub_name=["path","Segmentation","Head Neck Segm.", 'intensity_spines_segment','intensity_spines_segment_shaft', 'spine_annot','spine_match','spine_match_dice','length sh. skl. vert.', ] 
         self.inten_file=[] 
         self.inten_file_train=['skl_distance','skl_shaft_distance',  ]#'spine_shaft_length',  'skl Shaft Distance',  'Length sp. skl to sh. skl.',"gauss_curv_smooth",'Annotation','spine_annot',"mean_curv_smooth","gauss_curv_init","mean_curv_init","intensity_shaft_neck_head",'intensity_shaft_spine','intensity_1hot_shaft_spine', 'intensity_1hot_shaft_neck_head']
- 
-        self.intensity_spines_logit=[f'intensity_spines_logit_{yuy}' for yuy in ['sh','sp']]
+        self.inten_file_train.extend(['intensity_shaft_spine','intensity_shaft_neck','intensity_shaft_head','intensity_shaft_neck_head','intensity_shaft.neck_head'])
+        self.intensity_spines_logit=[f'intensity_spine_logit_{yuy}' for yuy in ['sh','sp']]
+        self.intensity_neck_logit=[f'intensity_neck_logit_{yuy}' for yuy in ['sh','nk']]
+        self.intensity_head_logit=[f'intensity_head_logit_{yuy}' for yuy in ['sh','hd']]
+        self.intensity_head_neck_logit=[f'intensity_neck_head_logit_{yuy}' for yuy in ['sh','nk','hd']]
+        m_logit=[self.intensity_spines_logit,self.intensity_neck_logit,self.intensity_head_logit,self.intensity_head_neck_logit]
+        self.intensity_logit_dict={key:val for key,val in zip(['spine','neck','head','neck_head'],m_logit)}
         # self.inten_file_train=['skl_distance', 'Annotation','spine_annot','spine_match','spine_match_dice' ]
+        self.intensity_logit=[mm[0] for mm in m_logit]
+        self.intensity_logit_ext=sum(m_logit,[])
         self.dend_file=['vertices_head','vertices_neck','vertices_spine','faces_head','faces_neck','faces_spine', "vertices_1","vertices_0",'faces_0']  
         self.inttt=[]
         self.inttt.extend(self.inten_file_sub)  
         # self.inttt.extend(self.inten_pca)  
-        self.inttt.extend(self.inten_file_model_head_neck)  
+        self.inttt.extend(self.inten_file_model_head_neck) 
+        self.inttt.extend(self.intensity_logit_ext) 
         self.inttt.extend(self.inten_file_train) 
-        self.inttt.extend(self.intensity_spines_logit)
+        # self.inttt.extend(self.intensity_spines_logit[:1])
+        # self.inttt.extend(self.intensity_neck_logit[:1])
+        # self.inttt.extend(self.intensity_head_logit[:1])
+        # self.inttt.extend(self.intensity_head_neck_logit[:1])
         self.inttt.extend(gfg) 
         # self.path_file_sub={ty for ty in self.inttt}  
         self.dropdown_options_style = {'color': 'white', 'background-color': 'gray'}
@@ -556,6 +567,31 @@ def drop_part(s, sep="_", index=1, name=None):
         return s 
     return sep.join(parts[:index] + parts[index+1:])
 
+def metric_paths(base, prefix):
+    return {
+        'loss': os.path.join(base, f'loss_{prefix}.txt'),
+        'iou': {
+            1: os.path.join(base, f'iou_{prefix}_sp.txt'),
+            0: os.path.join(base, f'iou_{prefix}_sh.txt'),
+        },
+        'auc': {
+            1: os.path.join(base, f'auc_{prefix}_sp.txt'),
+            0: os.path.join(base, f'auc_{prefix}_sh.txt'),
+        },
+        'dice': {
+            1: os.path.join(base, f'dice_{prefix}_sp.txt'),
+            0: os.path.join(base, f'dice_{prefix}_sh.txt'),
+        },
+        'index_save': os.path.join(base, f'index_{prefix}.txt'),
+    }
+def model_paths(base, name, mo):
+    return {
+        'model': os.path.join(base, f'model_{name}.{mo}'),
+        'model_iou': os.path.join(base, f'model_iou_{name}.{mo}'),
+        'model_dice': os.path.join(base, f'model_dice_{name}.{mo}'),
+        'model_auc': os.path.join(base, f'model_auc_{name}.{mo}'),
+        'model_loss': os.path.join(base, f'model_loss_{name}.{mo}'),
+    }
 
 
 class get_param:
@@ -842,9 +878,7 @@ class get_files(get_name,get_param):
         self.dropdown_path_head_option.append({'label': f'Annotation',   'value': 'true', 'style': self.dropdown_options_style})
 
         self.dropdown_model_suf_option=[]
-        for intt in self.model_sufix_dic['model_sufix_show']:
-            # if intt in list(self.model_sufix_dic['model_sufix_dic'].keys()):
-                # print('[[[[[[[[[[]]]]]]]]]]',self.model_sufix_dic['model_sufix_dic'])
+        for intt in self.model_sufix_dic['model_sufix_show']: 
                 self.dropdown_model_suf_option.append({'label': self.model_sufix_dic['model_sufix_dic'][intt],          'value': intt,           'style': self.dropdown_options_style})   
 
   
@@ -892,13 +926,15 @@ class get_files(get_name,get_param):
         self.df_metric_algorithms_dir = os.path.join(self.file_path_model, 'df_metric_algorithms.csv')
         
         mo = 'pkl' if model_type == 'ML' else 'pth' if model_type.endswith('cnn') else 'keras'
-
+        '''
         self.model_save_dir = os.path.join(self.file_path_model, f'model.{mo}')
         self.model_save_dir_dice = os.path.join(self.file_path_model, f'model_dice.{mo}')
         self.model_save_dir_iou = os.path.join(self.file_path_model, f'model_iou.{mo}')
         self.model_save_dir_auc = os.path.join(self.file_path_model, f'model_auc.{mo}')
         self.model_save_dir_loss = os.path.join(self.file_path_model, f'model_loss.{mo}')
         self.model_spine_save_dir = os.path.join(self.file_path_model, f'model_spine.{mo}')
+        self.model_head_save_dir = os.path.join(self.file_path_model, f'model_head.{mo}')
+        self.model_neck_save_dir = os.path.join(self.file_path_model, f'model_neck.{mo}')
         self.model_shaft_save_dir = os.path.join(self.file_path_model, f'model_shaft.{mo}')
         self.model_head_neck_save_dir = os.path.join(self.file_path_model, f'model_head_neck.{mo}')
 
@@ -919,6 +955,35 @@ class get_files(get_name,get_param):
         self.dice_spine_sp_save_dir  = os.path.join(self.file_path_model, 'dice_spine_sp.txt') 
         self.dice_spine_sh_save_dir  = os.path.join(self.file_path_model, 'dice_spine_sh.txt') 
         self.index_spine_save_dir  = os.path.join(self.file_path_model, 'index_spine.txt') 
+ 
+        prep='neck'
+        self.loss_neck_save_dir  = os.path.join(self.file_path_model, 'loss_neck.txt') 
+        self.iou_neck_sp_save_dir   = os.path.join(self.file_path_model, 'iou_neck_sp.txt')
+        self.iou_neck_sh_save_dir   = os.path.join(self.file_path_model, 'iou_neck_sh.txt')
+        self.auc_neck_sp_save_dir  = os.path.join(self.file_path_model, 'auc_neck_sp.txt') 
+        self.auc_neck_sh_save_dir  = os.path.join(self.file_path_model, 'auc_neck_sh.txt') 
+        self.dice_neck_sp_save_dir  = os.path.join(self.file_path_model, 'dice_neck_sp.txt') 
+        self.dice_neck_sh_save_dir  = os.path.join(self.file_path_model, 'dice_neck_sh.txt') 
+        self.index_neck_save_dir  = os.path.join(self.file_path_model, 'index_neck.txt') 
+        self.model_save_dir_dice_neck = os.path.join(self.file_path_model, f'model_dice_{prep}.{mo}')
+        self.model_save_dir_iou_neck = os.path.join(self.file_path_model, f'model_iou_{prep}.{mo}')
+        self.model_save_dir_auc_neck = os.path.join(self.file_path_model, f'model_auc_{prep}.{mo}')
+        self.model_save_dir_loss_neck = os.path.join(self.file_path_model, f'model_loss_{prep}.{mo}')
+
+  
+        prep='head'
+        self.loss_head_save_dir  = os.path.join(self.file_path_model, 'loss_head.txt') 
+        self.iou_head_sp_save_dir   = os.path.join(self.file_path_model, 'iou_head_sp.txt')
+        self.iou_head_sh_save_dir   = os.path.join(self.file_path_model, 'iou_head_sh.txt')
+        self.auc_head_sp_save_dir  = os.path.join(self.file_path_model, 'auc_head_sp.txt') 
+        self.auc_head_sh_save_dir  = os.path.join(self.file_path_model, 'auc_head_sh.txt') 
+        self.dice_head_sp_save_dir  = os.path.join(self.file_path_model, 'dice_head_sp.txt') 
+        self.dice_head_sh_save_dir  = os.path.join(self.file_path_model, 'dice_head_sh.txt') 
+        self.index_head_save_dir  = os.path.join(self.file_path_model, 'index_head.txt')
+        self.model_save_dir_dice_head = os.path.join(self.file_path_model, f'model_dice_{prep}.{mo}')
+        self.model_save_dir_iou_head = os.path.join(self.file_path_model, f'model_iou_{prep}.{mo}')
+        self.model_save_dir_auc_head = os.path.join(self.file_path_model, f'model_auc_{prep}.{mo}')
+        self.model_save_dir_loss_head = os.path.join(self.file_path_model, f'model_loss_{prep}.{mo}')
 
         self.loss_shaft_save_dir  = os.path.join(self.file_path_model, 'loss_shaft.txt') 
         self.index_shaft_save_dir  = os.path.join(self.file_path_model, 'index_shaft.txt')  
@@ -961,6 +1026,50 @@ class get_files(get_name,get_param):
                 'model_auc': self.model_save_dir_auc,
                 'model_loss': self.model_save_dir_loss,
                 'rhs_name':['shaft_pre_sp','spine_pre_sp'],
+            },
+            'head': {
+                'loss': self.loss_head_save_dir, 
+                'iou':{
+                        1:self.iou_head_sp_save_dir,
+                        0:self.iou_head_sh_save_dir,
+                       } , 
+                'auc':{
+                        1:self.auc_head_sp_save_dir,
+                        0:self.auc_head_sh_save_dir,
+                       } , 
+                'dice':{
+                        1:self.dice_head_sp_save_dir,
+                        0:self.dice_head_sh_save_dir,
+                       } , 
+                'index_save': self.index_head_save_dir, 
+                'model': self.model_head_save_dir,
+                'model_iou': self.model_save_dir_iou,
+                'model_dice': self.model_save_dir_dice,
+                'model_auc': self.model_save_dir_auc,
+                'model_loss': self.model_save_dir_loss,
+                'rhs_name':['shaft_pre_sp','head_pre_sp'],
+            },
+            'neck': {
+                'loss': self.loss_neck_save_dir, 
+                'iou':{
+                        1:self.iou_neck_sp_save_dir,
+                        0:self.iou_neck_sh_save_dir,
+                       } , 
+                'auc':{
+                        1:self.auc_neck_sp_save_dir,
+                        0:self.auc_neck_sh_save_dir,
+                       } , 
+                'dice':{
+                        1:self.dice_neck_sp_save_dir,
+                        0:self.dice_neck_sh_save_dir,
+                       } , 
+                'index_save': self.index_neck_save_dir, 
+                'model': self.model_neck_save_dir,
+                'model_iou': self.model_save_dir_iou,
+                'model_dice': self.model_save_dir_dice,
+                'model_auc': self.model_save_dir_auc,
+                'model_loss': self.model_save_dir_loss,
+                'rhs_name':['shaft_pre_sp','head_pre_sp'],
             },
             'head_neck': {
                 'loss': self.loss_head_neck_save_dir,
@@ -1005,7 +1114,58 @@ class get_files(get_name,get_param):
                 'rhs_name':['spine_pre'],
             }
         }
-  
+  '''
+        self.model_dir_path = {
+            'spine': {
+                **metric_paths(self.file_path_model, 'spine'),
+                **model_paths(self.file_path_model, 'spine', mo),
+                'rhs_name': ['shaft_pre_sp', 'spine_pre_sp'],
+            },
+            'head': {
+                **metric_paths(self.file_path_model, 'head'),
+                **model_paths(self.file_path_model, 'head', mo),
+                'rhs_name': ['shaft_pre_sp', 'head_pre_sp'],
+            },
+            'neck': {
+                **metric_paths(self.file_path_model, 'neck'),
+                **model_paths(self.file_path_model, 'neck', mo),
+                'rhs_name': ['shaft_pre_sp', 'head_pre_sp'],
+            },
+            'neck_head': {
+                'loss': os.path.join(self.file_path_model, 'loss_neck_head.txt'),
+                'iou': {
+                    2: os.path.join(self.file_path_model, 'iou_neck_head_hd.txt'),
+                    1: os.path.join(self.file_path_model, 'iou_neck_head_nk.txt'),
+                    0: os.path.join(self.file_path_model, 'iou_neck_head_sh.txt'),
+                },
+                'auc': {
+                    2: os.path.join(self.file_path_model, 'auc_neck_head_hd.txt'),
+                    1: os.path.join(self.file_path_model, 'auc_neck_head_nk.txt'),
+                    0: os.path.join(self.file_path_model, 'auc_neck_head_sh.txt'),
+                },
+                'dice': {
+                    2: os.path.join(self.file_path_model, 'dice_neck_head_hd.txt'),
+                    1: os.path.join(self.file_path_model, 'dice_neck_head_nk.txt'),
+                    0: os.path.join(self.file_path_model, 'dice_neck_head_sh.txt'),
+                },
+                'index_save': os.path.join(self.file_path_model, 'index_neck_head.txt'),
+                **model_paths(self.file_path_model, 'neck_head', mo),
+                'rhs_name': ['shaft_pre', 'neck_pre', 'head_pre'],
+            },
+            'shaft': {
+                'loss': os.path.join(self.file_path_model, 'loss_shaft.txt'),
+                'model': os.path.join(self.file_path_model, f'model_shaft.{mo}'),
+                'rhs_name': ['shaft_pre'],
+            },
+            'default': {
+                'loss': os.path.join(self.file_path_model, 'loss.txt'),
+                'iou': os.path.join(self.file_path_model, 'iou.txt'),
+                'auc': os.path.join(self.file_path_model, 'auc.txt'),
+                'dice': os.path.join(self.file_path_model, 'dice.txt'),
+                **model_paths(self.file_path_model, 'default', mo),
+                'rhs_name': ['spine_pre'],
+            }
+        }
 
     def get_path(self, *names, name='pinn',
                  dend_path=None,
@@ -1316,8 +1476,14 @@ class get_files(get_name,get_param):
                         os.makedirs(self.path_file[key], exist_ok=True) 
                         for tyy in self.inten_file_sub[1:]: 
                             self.path_file_sub[tyy][key]= os.path.join(self.path_file[key],f'{tyy}.txt')  
-                        for tyy in self.intensity_spines_logit: 
-                            self.path_file_sub[tyy][key]= os.path.join(os.path.dirname(self.path_file[key]),f'{tyy}.txt')  
+                        for tyy in self.intensity_logit_ext: 
+                            self.path_file_sub[tyy][key]= os.path.join(os.path.dirname(self.path_file[key]),f'{tyy}.txt') 
+                        # for tyy in self.intensity_spines_logit: 
+                        #     self.path_file_sub[tyy][key]= os.path.join(os.path.dirname(self.path_file[key]),f'{tyy}.txt') 
+                        # for tyy in self.intensity_head_neck_logit: 
+                        #     self.path_file_sub[tyy][key]= os.path.join(os.path.dirname(self.path_file[key]),f'{tyy}.txt')  
+
+
                         # for tyy in self.inten_pca: 
                         #     self.path_file_sub[tyy][key]= os.path.join(self.path_file[key],f'{tyy}.txt') 
 
@@ -1889,10 +2055,10 @@ class get_app_param(get_name ):
             self.dropdown_intensity_option.append({'label': intt,   'value': intt,       'style': dropdown_options_style})  
         for intt in self.base_features_dict.keys():
             self.dropdown_intensity_option.append({'label': intt,   'value': intt,       'style': dropdown_options_style}) 
-        for intt in self.intensity_spines_logit:
+        for intt in self.intensity_logit:
             self.dropdown_intensity_option.append({'label': intt,   'value': intt,       'style': dropdown_options_style}) 
-
-
+        for intt in self.intensity_head_neck_logit:
+            self.dropdown_intensity_option.append({'label': intt,   'value': intt,       'style': dropdown_options_style}) 
 
 
 

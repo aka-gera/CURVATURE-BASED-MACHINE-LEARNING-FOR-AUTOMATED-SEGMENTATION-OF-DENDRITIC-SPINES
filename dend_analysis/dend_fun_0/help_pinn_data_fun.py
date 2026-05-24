@@ -391,6 +391,7 @@ class pinn_data(get_name,get_param):
                         kmean_n_run=60,
                         kmean_max_iter=600,
                         param_dic=None,
+                        dend_path_true_final=None,
                         ):
         get_name.__init__(self)  
         get_param.__init__(self,
@@ -419,9 +420,11 @@ class pinn_data(get_name,get_param):
         self.kmean_n_run=kmean_n_run
         self.kmean_max_iter=kmean_max_iter
         self.param_dic=param_dic
+        self.dend_path_true_final=dend_path_true_final
         pass
  
     def get_intensity_head_neck(self, 
+                        dend_path_true_final=None,
 						dend_first_name=None,
 						spine_path=None,
                         shaft_path=None,
@@ -430,7 +433,6 @@ class pinn_data(get_name,get_param):
 						radius_threshold=None, 
 						disp_infos=None,
 						size_threshold=None,
-                        dend_path_true_final=None,
 						):
         disp_infos=disp_infos or self.disp_infos
         file_path  = file_path or self.file_path
@@ -443,7 +445,7 @@ class pinn_data(get_name,get_param):
         dend_path_true_final=dend_path_true_final or self.dend_path_true_final
         if disp_infos:
             print(f"get_intensity_head_neck: {file_path}")  
-        vertices_00 = np.loadtxt(os.path.join(file_path, self.txt_vertices_1), dtype=float)
+        vertices_00 = np.loadtxt(os.path.join(file_path, self.txt_vertices_old), dtype=float)
 
         intensity  =  np.zeros(vertices_00.shape[0]) 
         intensity_1hot=np.zeros_like(vertices_00[:,:-1],dtype=int)
@@ -602,15 +604,24 @@ class pinn_data(get_name,get_param):
             vertices_0  = np.loadtxt(os.path.join(file_path, self.txt_vertices_0), dtype=float)
             vertices_0 -= np.mean(vertices_0, axis=0)
             self.vertices_0=vertices_0
- 
-        if pre_portion=='head_neck': 
-            shaft_path_tmp=os.path.join(dend_path_true_final,'intensity_1hot_shaft_neck_head.txt')
-            if not os.path.exists(shaft_path_tmp):
-                self.get_intensity_head_neck(radius_threshold=radius_threshold) 
-        elif pre_portion=='spine':  
-            shaft_path_tmp=os.path.join(dend_path_true_final,'intensity_1hot_shaft_spine.txt')
-            if not os.path.exists(shaft_path_tmp):
-                self.get_intensity_head_neck(radius_threshold=radius_threshold)
+        print('[[[[[[[pre_portion]]]]]]]',pre_portion)
+        shaft_path_tmp=os.path.join(dend_path_true_final,f'intensity_1hot_shaft_{pre_portion}.txt')
+        # if pre_portion=='head_neck': 
+        #     shaft_path_tmp=os.path.join(dend_path_true_final,'intensity_1hot_shaft_neck_head.txt')
+        #     if not os.path.exists(shaft_path_tmp):
+        #         self.get_intensity_head_neck(radius_threshold=radius_threshold) 
+        # elif pre_portion=='spine':  
+        #     shaft_path_tmp=os.path.join(dend_path_true_final,'intensity_1hot_shaft_spine.txt')
+        #     if not os.path.exists(shaft_path_tmp):
+        #         self.get_intensity_head_neck(radius_threshold=radius_threshold)
+        # elif pre_portion=='head':  
+        #     shaft_path_tmp=os.path.join(dend_path_true_final,'intensity_1hot_shaft_head.txt')
+        #     if not os.path.exists(shaft_path_tmp):
+        #         self.get_intensity_head_neck(radius_threshold=radius_threshold)
+        # elif pre_portion=='neck':  
+        #     shaft_path_tmp=os.path.join(dend_path_true_final,'intensity_1hot_shaft_neck.txt')
+        #     if not os.path.exists(shaft_path_tmp):
+        #         self.get_intensity_head_neck(radius_threshold=radius_threshold)
 
         return np.loadtxt(shaft_path_tmp,dtype=int) 
 

@@ -190,7 +190,7 @@ class  get_cylinder:
         heatmap, xedges, yedges = np.histogram2d(flattened_points[:,0], flattened_points[:,1], bins=bins)
         smoothed_heatmap = gaussian_filter(heatmap, sigma=sigma_gaussian_param)
   
-        angle_mask = (xedges[:-1] >= -np.pi - eps_theta) & (xedges[:-1] <= np.pi*(1+0.05) + eps_theta)
+        angle_mask = (xedges[:-1] >= -np.pi - eps_theta) & (xedges[:-1] <= np.pi*(1+0.04) + eps_theta)
 
         hmin, hmax = np.min(flattened_points_org[:,1]), np.max(flattened_points_org[:,1])
         

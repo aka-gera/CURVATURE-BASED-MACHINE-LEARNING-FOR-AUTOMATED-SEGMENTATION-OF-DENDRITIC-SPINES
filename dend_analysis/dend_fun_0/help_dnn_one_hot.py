@@ -345,7 +345,7 @@ class LOSS():
              
             lossi=tf.zeros(len(self.weight[0]))
             for cu,rhs,weig in zip(self.curv,self.rhs,self.weight):  
-                rhs0=model(cu)  
+                rhs0=model(cu)   
                 bce_each =  tf.keras.losses.binary_crossentropy(rhs, rhs0,axis=0)  
                 lossi+=tf.reduce_sum(weig*bce_each,axis=-1) 
             loss_tmp=min(lossi) 

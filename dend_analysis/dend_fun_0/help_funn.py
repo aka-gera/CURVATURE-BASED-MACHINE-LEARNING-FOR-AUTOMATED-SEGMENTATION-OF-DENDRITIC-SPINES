@@ -1295,7 +1295,6 @@ class clust_pca:
         self.pc_start = centroid +  proj_0.min()* self.normal_vector
         self.pc_end= centroid +  proj_0.max()* self.normal_vector 
         self.pc_bound=np.array([self.pc_start,self.pc_end])
-
         vertices_shaft_wrap=vertices[vertices_index_shaft] 
         if vertices_center is None:
             self.vertices_shaft_wrap= np.vstack((vertices_shaft_wrap, self.pc_bound))
@@ -1303,8 +1302,12 @@ class clust_pca:
             self.vertices_center=vertices_center
             self.vertices_shaft_wrap= np.vstack((vertices_shaft_wrap, self.pc_bound,self.vertices_center))
             self.vcv_length=vcv_length
+'''
+    def get_extrem_point(self):
+        kdtree_00=KDTree(self.vertices_shaft_wrap)
+        self.extrem_start=self.vertices_shaft_wrap[kdtree_00.query(np.array([self.pc_start,self.pc_end]))[0]]
 
-
+'''
 
 def dot_(V1,V2,axis=1):
     return np.sum(V1*V2, axis=axis, keepdims=True) 

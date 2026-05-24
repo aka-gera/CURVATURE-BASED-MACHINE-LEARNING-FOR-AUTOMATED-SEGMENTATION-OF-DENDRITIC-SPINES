@@ -121,6 +121,7 @@ class train_test_tf(get_files,get_name):
                             kmean_n_run=kmean_n_run,
                             kmean_max_iter=kmean_max_iter,
                             param_dic=param_dic,
+                            dend_path_true_final=self.dend_path_true_final,
                                 )
             pid.save_pinn_data()    
             pid.get_dend_data()
@@ -228,6 +229,7 @@ class train_test_tf(get_files,get_name):
                                 kmean_n_run=kmean_n_run,
                                 kmean_max_iter=kmean_max_iter,
                                 param_dic=param_dic,
+                            dend_path_true_final=self.dend_path_true_final,
                                     ) 
                 file_path_feat = self.file_path_feat if entry_name is None else self.file_path_feat_entry
                 file_path = self.file_path if entry_name is None else self.file_path_entry
@@ -264,7 +266,12 @@ class train_test_tf(get_files,get_name):
                                         dend_path_true_final=self.dend_path_true_final,
                                         ),  
                             )
-                    pathh=os.path.join( self.dend_path_true_final ,'intensity_shaft_spine.txt')
+                    if pre_portion=='head': 
+                        pathh=os.path.join( self.dend_path_true_final ,'intensity_shaft.neck_head.txt')
+                    elif pre_portion=='neck_head': 
+                        pathh=os.path.join( self.dend_path_true_final ,'intensity_shaft_neck_head.txt')
+                    else:
+                        pathh=os.path.join( self.dend_path_true_final ,'intensity_shaft_spine.txt')
                     mask=np.loadtxt(pathh,dtype=int)
                     unique=np.sort(np.unique(mask))
                     labels = {v: np.argwhere(mask == v) for v in unique}
@@ -604,8 +611,9 @@ class train_test_tf(get_files,get_name):
                             kmean_n_run=kmean_n_run,
                             kmean_max_iter=kmean_max_iter,
                             param_dic=param_dic,
+                            dend_path_true_final=self.dend_path_true_final,
                         )  
-            key,tyy=f'{self.model_type}_{self.model_sufix}_{self.path_dir}', self.intensity_spines_logit[0]  
+            key,tyy=f'{self.model_type}_{self.model_sufix}_{self.path_dir}', self.intensity_logit_dict[pre_portion][0]  
             path_ex = os.path.join(self.path_file_sub[tyy][key]) 
             if os.path.exists(path_ex) and not param_dic['tf_restart']['get_shaft_pred']: 
                 continue
@@ -634,7 +642,7 @@ class train_test_tf(get_files,get_name):
             rhs0 = model.predict_proba( curv[0] )
             # rhs0=model(curv[0]).numpy()   
             key=f'{self.model_type}_{self.model_sufix}_{self.path_dir}'  
-            for kk,tyy in enumerate(self.intensity_spines_logit):
+            for kk,tyy in enumerate(self.intensity_logit_dict[pre_portion]):
                 np.savetxt(self.path_file_sub[tyy][key], rhs0[:,kk], fmt='%f') 
  
 
@@ -656,7 +664,7 @@ class train_test_tf(get_files,get_name):
 
             # cxc=param_dic['data']['get_dend_name']['dict_dend_path']
             # key=f'{self.model_type}_{self.model_sufix}_{self.path_dir}' # if cxc in [None,'current'] else f'{cxc}_{self.model_type}_{self.model_sufix}_{self.path_dir}'
-            for kk,tyy in enumerate(self.intensity_spines_logit):
+            for kk,tyy in enumerate(self.intensity_logit_ext[pre_portion]):
                 np.savetxt(self.path_file_sub[tyy][key], rhs0[:,kk][idx], fmt='%f') 
 
 
@@ -763,6 +771,7 @@ class train_test_tf(get_files,get_name):
                                 kmean_n_run=kmean_n_run,
                                 kmean_max_iter=kmean_max_iter,
                                 param_dic=param_dic,
+                            dend_path_true_final=self.dend_path_true_final,
                                     ) 
                 file_path_feat = self.file_path_feat if entry_name is None else self.file_path_feat_entry
                 file_path = self.file_path if entry_name is None else self.file_path_entry
@@ -823,7 +832,12 @@ class train_test_tf(get_files,get_name):
                                         ), 
                             dtype=DTYPE), 
                                     )  
-                    pathh=os.path.join( self.dend_path_true_final ,'intensity_shaft_spine.txt')
+                    if pre_portion=='head': 
+                        pathh=os.path.join( self.dend_path_true_final ,'intensity_shaft.neck_head.txt')
+                    elif pre_portion=='neck_head': 
+                        pathh=os.path.join( self.dend_path_true_final ,'intensity_shaft_neck_head.txt')
+                    else:
+                        pathh=os.path.join( self.dend_path_true_final ,'intensity_shaft_spine.txt')
                     mask=np.loadtxt(pathh,dtype=int)
                     unique=np.sort(np.unique(mask))
                     labels = {v: np.argwhere(mask == v) for v in unique}
@@ -1081,7 +1095,7 @@ class train_test_tf(get_files,get_name):
             np.savetxt(index_save_dir, np.array(index_save), fmt='%d') 
             loss_tmp,iou_tmp,auc_tmp,dice_tmp=metr[mmjl][f'loss_tmp'],metr[mmjl][f'iou_tmp'],metr[mmjl][f'auc_tmp'],metr[mmjl][f'dice_tmp']
             # if loss.numpy() < loss_tmp: 
-            if pre_portion=='head_neck':
+            if pre_portion=='neck_head':
                 pbar.set_description(f"Loss: {loss_tmp:.6f} |  IoU sh: { iou_tmp[0]:.4f} IoU nk: {iou_tmp[1]:.4f} IoU hd: {iou_tmp[2]:.4f}")
             elif pre_portion=='spine':
                 pbar.set_description(f"Loss: {loss_tmp:.6f} |  IoU(sh: {iou_tmp[0]:.2f}, sp: {iou_tmp[1]:.2f})|  DICE(sh: {dice_tmp[0]:.2f}, sp: {dice_tmp[1]:.2f}) |  AUC(sh: {auc_tmp[0]:.2f}, sp: {auc_tmp[1]:.2f})")
@@ -1230,8 +1244,9 @@ class train_test_tf(get_files,get_name):
                             kmean_n_run=kmean_n_run,
                             kmean_max_iter=kmean_max_iter,
                             param_dic=param_dic,
+                            dend_path_true_final=self.dend_path_true_final,
                         )  
-            key,tyy=f'{self.model_type}_{self.model_sufix}_{self.path_dir}', self.intensity_spines_logit[0]  
+            key,tyy=f'{self.model_type}_{self.model_sufix}_{self.path_dir}', self.intensity_logit_dict[pre_portion][0]  
             path_ex = os.path.join(self.path_file_sub[tyy][key]) 
             if os.path.exists(path_ex) and not param_dic['tf_restart']['get_shaft_pred']: 
                 continue
@@ -1261,7 +1276,7 @@ class train_test_tf(get_files,get_name):
             rhs0=model(curv[0]).numpy()
 
             key=f'{self.model_type}_{self.model_sufix}_{self.path_dir}'  
-            for kk,tyy in enumerate(self.intensity_spines_logit):
+            for kk,tyy in enumerate(self.intensity_logit_dict[pre_portion]):
                 np.savetxt(self.path_file_sub[tyy][key], rhs0[:,kk], fmt='%f') 
 
               
@@ -1282,7 +1297,7 @@ class train_test_tf(get_files,get_name):
 
             cxc=param_dic['data']['get_dend_name']['dict_dend_path']
             key=f'{self.model_type}_{self.model_sufix}_{self.path_dir}' # if cxc in [None,'current'] else f'{cxc}_{self.model_type}_{self.model_sufix}_{self.path_dir}'
-            for kk,tyy in enumerate(self.intensity_spines_logit):
+            for kk,tyy in enumerate(self.intensity_logit_dict[pre_portion]):
                 np.savetxt(self.path_file_sub[tyy][key], rhs0[:,kk][idx], fmt='%f') 
 
 
@@ -1680,7 +1695,7 @@ class train_test_tf(get_files,get_name):
             #     index_save.append(i)
             #     np.savetxt(index_save_dir, np.array(index_save), fmt='%d')  
             # print(auc_tmp)
-            if pre_portion=='head_neck':
+            if pre_portion=='neck_head':
                 pbar.set_description(f"Loss: {loss_tmp:.6f} |  IoU sh: { iou_tmp[0]:.4f} IoU nk: {iou_tmp[1]:.4f} IoU hd: {iou_tmp[2]:.4f}")
             elif pre_portion=='spine':
                 pbar.set_description(f"Loss: {loss_tmp:.6f} |  IoU(sh: {iou_tmp[0]:.2f}, sp: {iou_tmp[1]:.2f})|  DICE(sh: {dice_tmp[0]:.2f}, sp: {dice_tmp[1]:.2f}) |  AUC(sh: {auc_tmp[0]:.2f}, sp: {auc_tmp[1]:.2f})")
@@ -1828,8 +1843,9 @@ class train_test_tf(get_files,get_name):
                             kmean_n_run=kmean_n_run,
                             kmean_max_iter=kmean_max_iter,
                             param_dic=param_dic,
+                            dend_path_true_final=self.dend_path_true_final,
                         )  
-            key,tyy=f'{self.model_type}_{self.model_sufix}_{self.path_dir}', self.intensity_spines_logit[0]  
+            key,tyy=f'{self.model_type}_{self.model_sufix}_{self.path_dir}', self.intensity_logit_dict[pre_portion][0]  
             path_ex = os.path.join(self.path_file_sub[tyy][key]) 
             if os.path.exists(path_ex) and not param_dic['tf_restart']['get_shaft_pred']: 
                 continue
@@ -1860,7 +1876,7 @@ class train_test_tf(get_files,get_name):
             print('-------------------=========rhs' ,mskls[0].vertices.shape)
 
             key=f'{self.model_type}_{self.model_sufix}_{self.path_dir}'  
-            for kk,tyy in enumerate(self.intensity_spines_logit):
+            for kk,tyy in enumerate(self.intensity_logit_dict[pre_portion]):
                 np.savetxt(self.path_file_sub[tyy][key], rhs0[:,kk], fmt='%f') 
 
             vert=np.loadtxt(os.path.join(self.file_path,self.txt_vertices_0)) 
@@ -1876,7 +1892,7 @@ class train_test_tf(get_files,get_name):
 
             cxc=param_dic['data']['get_dend_name']['dict_dend_path']
             key=f'{self.model_type}_{self.model_sufix}_{self.path_dir}' # if cxc in [None,'current'] else f'{cxc}_{self.model_type}_{self.model_sufix}_{self.path_dir}'
-            for kk,tyy in enumerate(self.intensity_spines_logit):
+            for kk,tyy in enumerate(self.intensity_logit_dict[pre_portion]):
                 np.savetxt(self.path_file_sub[tyy][key], rhs0[:,kk][idx], fmt='%f')  
 
             mytime0 = time.time() - time_start
@@ -1971,7 +1987,8 @@ class train_test_tf(get_files,get_name):
                                 dict_mesh_to_skeleton_finder_mesh=dict_mesh_to_skeleton_finder_mesh,
                                 kmean_n_run=kmean_n_run,
                                 kmean_max_iter=kmean_max_iter,
-                                param_dic=param_dic,
+                                param_dic=param_dic, 
+                                        dend_path_true_final=self.dend_path_true_final,
                                     ) 
                 file_path_feat = self.file_path_feat if entry_name is None else self.file_path_feat_entry
                 file_path = self.file_path if entry_name is None else self.file_path_entry
@@ -2001,15 +2018,25 @@ class train_test_tf(get_files,get_name):
                         print('path doesnt exists ===----->>>',pathh)
                 dend.append(pid.dend)     
                 if tf_train:
+                    # if pre_portion=='head': 
+                    #     pathh=os.path.join( self.dend_path_true_final ,'intensity_shaft.neck_head.txt')
+                    # elif pre_portion=='neck_head': 
+                    #     pathh=os.path.join( self.dend_path_true_final ,'intensity_shaft_neck_head.txt')
+                    # else:
+                    #     pathh=os.path.join( self.dend_path_true_final ,'intensity_shaft_spine.txt')
+                    # rhs.append(tf.cast(
+                    #     pid.get_pinn_rhs(pre_portion=pre_portion,
+                    #                     file_path_feat=file_path_feat,
+                    #                     file_path=file_path,
+                    #                     dend_path_true_final=self.dend_path_true_final,
+                    #                     ), 
+                    #     dtype=DTYPE)
+                    #         ) 
                     rhs.append(tf.cast(
-                        pid.get_pinn_rhs(pre_portion=pre_portion,
-                                        file_path_feat=file_path_feat,
-                                        file_path=file_path,
-                                        dend_path_true_final=self.dend_path_true_final,
-                                        ), 
+                        np.loadtxt(os.path.join( self.dend_path_true_final ,f'intensity_1hot_shaft_{pre_portion}.txt'),dtype=int), 
                         dtype=DTYPE)
-                            )
-                    pathh=os.path.join( self.dend_path_true_final ,'intensity_shaft_spine.txt')
+                            ) 
+                    pathh=os.path.join( self.dend_path_true_final ,f'intensity_shaft_{pre_portion}.txt')
                     mask=np.loadtxt(pathh,dtype=int)
                     unique=np.sort(np.unique(mask))
                     labels = {v: np.argwhere(mask == v) for v in unique}
@@ -2148,8 +2175,11 @@ class train_test_tf(get_files,get_name):
                                 kmean_n_run=kmean_n_run,
                                 kmean_max_iter=kmean_max_iter,
                                 param_dic=param_dic,
-                                ) 
-        weight=[np.array([weig]+list(weight)) for weig in weights] 
+                                )  
+        if pre_portion=='neck_head':
+            weight=weights
+        else:
+            weight=[np.array([weig]+list(weight)) for weig in weights] 
         ls =[i for i in ls if i in range(len(curv))]
         for ii in ls:
             print(' [[[[[]]]]]',ii,curv[ii].shape)
@@ -2160,7 +2190,7 @@ class train_test_tf(get_files,get_name):
         adj_train =[] 
         from dend_fun_0.help_dnn_one_hot import LOSS,aka_train,Get_iou,model_choice,get_auc,model_metric
         with tf.device(device):
-            mchoice = model_choice(model_type=model_type, )
+            mchoice = model_choice(model_type=model_type,n_classes=rhs[0].shape[1] )
             model = mchoice.get_model() 
             custom = mchoice.get_custom_objects(model_type) 
                  
@@ -2288,9 +2318,9 @@ class train_test_tf(get_files,get_name):
             #     index_save.append(i)
             #     np.savetxt(index_save_dir, np.array(index_save), fmt='%d')  
             # print(auc_tmp)
-            if pre_portion=='head_neck':
+            if pre_portion=='neck_head':
                 pbar.set_description(f"Loss: {loss_tmp:.6f} |  IoU sh: { iou_tmp[0]:.4f} IoU nk: {iou_tmp[1]:.4f} IoU hd: {iou_tmp[2]:.4f}")
-            elif pre_portion=='spine':
+            elif pre_portion in ('spine','head','neck'):
                 pbar.set_description(f"Loss: {loss_tmp:.6f} |  IoU(sh: {iou_tmp[0]:.2f}, sp: {iou_tmp[1]:.2f})|  DICE(sh: {dice_tmp[0]:.2f}, sp: {dice_tmp[1]:.2f}) |  AUC(sh: {auc_tmp[0]:.2f}, sp: {auc_tmp[1]:.2f})")
             else:
                 pbar.set_description(f"Loss: {loss_tmp:.6f} ")
@@ -2326,6 +2356,7 @@ class train_test_tf(get_files,get_name):
                         shaft_thre=None,
                         train_spines=False,
                         weight=None,
+                        weight2=None,
                         weights=None,
                         neck_lim=None,
                         n_clusters=3,  
@@ -2389,8 +2420,8 @@ class train_test_tf(get_files,get_name):
  
         if model_type.startswith(('dnn',)):
             from dend_fun_0.help_dnn_one_hot import model_choice  
-
-        mchoice = model_choice(model_type=model_type)
+        n_classes= 3 if pre_portion=='neck_head' else 2
+        mchoice = model_choice(model_type=model_type,n_classes=n_classes)
         custom = mchoice.get_custom_objects(model_type) 
         model = load_model(model_dir, custom_objects=custom)
 
@@ -2435,8 +2466,10 @@ class train_test_tf(get_files,get_name):
                             kmean_n_run=kmean_n_run,
                             kmean_max_iter=kmean_max_iter,
                             param_dic=param_dic,
+                                        dend_path_true_final=self.dend_path_true_final,
                         )  
-            key,tyy=f'{self.model_type}_{self.model_sufix}_{self.path_dir}', self.intensity_spines_logit[0]  
+            spines_logit=  self.intensity_logit_dict[pre_portion]
+            key,tyy=f'{self.model_type}_{self.model_sufix}_{self.path_dir}', spines_logit[0]  
             path_ex = os.path.join(self.path_file_sub[tyy][key]) 
             if os.path.exists(path_ex) and not param_dic['tf_restart']['get_shaft_pred']: 
                 continue
@@ -2465,15 +2498,12 @@ class train_test_tf(get_files,get_name):
                                     )   
             rhs0=model(curv[0]).numpy()   
             key=f'{self.model_type}_{self.model_sufix}_{self.path_dir}'  
-            for kk,tyy in enumerate(self.intensity_spines_logit):
+            for kk,tyy in enumerate(spines_logit):
                 np.savetxt(self.path_file_sub[tyy][key], rhs0[:,kk], fmt='%f') 
  
 
 
-
-
-
-
+ 
             vert=np.loadtxt(os.path.join(self.file_path,self.txt_vertices_0)) 
             vert_old=np.loadtxt(os.path.join(self.file_path,self.txt_vertices_old)) 
             from scipy.spatial import KDTree 
@@ -2484,13 +2514,13 @@ class train_test_tf(get_files,get_name):
                                index=index,
                                 model_type=model_type,
                                 ** param_dic['data']['get_dend_name'])    
-
-            # cxc=param_dic['data']['get_dend_name']['dict_dend_path']
-            # key=f'{self.model_type}_{self.model_sufix}_{self.path_dir}' # if cxc in [None,'current'] else f'{cxc}_{self.model_type}_{self.model_sufix}_{self.path_dir}'
-            for kk,tyy in enumerate(self.intensity_spines_logit):
+ 
+ 
+            spines_logit=self.intensity_logit_dict[pre_portion]
+            print('[[[[[[[[[[[[[[[[[intensity_spines_logit]]]]]]]]]]]]]]]]]',spines_logit)
+            for kk,tyy in enumerate(self.intensity_logit_dict[pre_portion]):
                 np.savetxt(self.path_file_sub[tyy][key], rhs0[:,kk][idx], fmt='%f') 
-
-
+        
  
             mytime0 = time.time() - time_start
  
@@ -2521,6 +2551,7 @@ class train_test_tf(get_files,get_name):
                         txt_save_file=None,
                         dend_names=None,
                         weight_positive=.5,  
+                        weight2=None,
                         list_features=None,
                         base_features_list=None,
                         model_type=None,
@@ -2582,6 +2613,7 @@ class train_test_tf(get_files,get_name):
                             kmean_n_run=kmean_n_run,
                             kmean_max_iter=kmean_max_iter,
                             param_dic=param_dic,
+                                        dend_path_true_final=self.dend_path_true_final,
                                     )
                 file_path_feat = self.file_path_feat if entry_name is None else self.file_path_feat_entry
                 file_path = self.file_path if entry_name is None else self.file_path_entry
@@ -2820,7 +2852,7 @@ class train_test_tf(get_files,get_name):
 
                 index_save.append(i)
                 np.savetxt(index_save_dir, np.array(index_save), fmt='%d')  
-            if pre_portion=='head_neck':
+            if pre_portion=='neck_head':
                 pbar.set_description(f"Loss: {loss_tmp:.6f} |  IoU sh: {min(iou_tmp[0]):.4f} IoU nk: {min(iou_tmp[1]):.4f} IoU hd: {min(iou_tmp[2]):.4f}")
             elif pre_portion=='spine':
                 pbar.set_description(f"Loss: {loss_tmp:.6f} |  IoU sh: {min(iou_tmp[0]):.4f} IoU sp: {min(iou_tmp[1]):.4f} |  AUC sh: {auc_tmp[0]:.4f} AUC sp: {auc_tmp[1]:.4f}")
@@ -2857,6 +2889,7 @@ class train_test_tf(get_files,get_name):
                         shaft_thre=None,
                         train_spines=False,
                         weight=None,
+                        weight2=None,
                         weights=None,
                         neck_lim=None,
                         n_clusters=3,  
@@ -2965,7 +2998,7 @@ class train_test_tf(get_files,get_name):
                             kmean_max_iter=kmean_max_iter,
                             param_dic=param_dic,
                         )  
-            key,tyy=f'{self.model_type}_{self.model_sufix}_{self.path_dir}', self.intensity_spines_logit[0]  
+            key,tyy=f'{self.model_type}_{self.model_sufix}_{self.path_dir}', self.intensity_logit_dict[pre_portion][0]  
             path_ex = os.path.join(self.path_file_sub[tyy][key]) 
             if os.path.exists(path_ex) and not param_dic['tf_restart']['get_shaft_pred']: 
                 continue
@@ -2995,7 +3028,7 @@ class train_test_tf(get_files,get_name):
             rhs0=model(curv[0]).numpy()[0,...] 
 
             key=f'{self.model_type}_{self.model_sufix}_{self.path_dir}'  
-            for kk,tyy in enumerate(self.intensity_spines_logit):
+            for kk,tyy in enumerate(self.intensity_logit_dict[pre_portion]):
                 np.savetxt(self.path_file_sub[tyy][key], rhs0[:,kk], fmt='%f') 
  
             mytime0 = time.time() - time_start
@@ -3093,6 +3126,7 @@ class train_test_tf(get_files,get_name):
                             kmean_n_run=kmean_n_run,
                             kmean_max_iter=kmean_max_iter,
                             param_dic=param_dic,
+                                        dend_path_true_final=self.dend_path_true_final,
                                     )
                 file_path_feat = self.file_path_feat if entry_name is None else self.file_path_feat_entry
                 file_path = self.file_path if entry_name is None else self.file_path_entry
@@ -3340,7 +3374,7 @@ class train_test_tf(get_files,get_name):
                 iou_tmp=iou  
                 index_save.append(i)
                 np.savetxt(index_save_dir, np.array(index_save), fmt='%d')  
-            if pre_portion=='head_neck':
+            if pre_portion=='neck_head':
                 pbar.set_description(f"Loss: {loss_tmp:.6f} |  IoU sh: {min(iou_tmp[0]):.4f} IoU nk: {min(iou_tmp[1]):.4f} IoU hd: {min(iou_tmp[2]):.4f}")
             elif pre_portion=='spine':
                 pbar.set_description(f"Loss: {loss_tmp:.6f} |  IoU sh: {min(iou_tmp[0]):.4f} IoU sp: {min(iou_tmp[1]):.4f}")
@@ -3377,6 +3411,7 @@ class train_test_tf(get_files,get_name):
                         shaft_thre=None,
                         train_spines=False,
                         weight=None,
+                        weight2=None,
                         weights=None,
                         neck_lim=None,
                         n_clusters=3,  
@@ -3506,8 +3541,9 @@ class train_test_tf(get_files,get_name):
                             kmean_n_run=kmean_n_run,
                             kmean_max_iter=kmean_max_iter,
                             param_dic=param_dic,
+                                        dend_path_true_final=self.dend_path_true_final,
                         )  
-            key,tyy=f'{self.model_type}_{self.model_sufix}_{self.path_dir}', self.intensity_spines_logit[0]  
+            key,tyy=f'{self.model_type}_{self.model_sufix}_{self.path_dir}', self.intensity_logit_dict[pre_portion][0]  
             path_ex = os.path.join(self.path_file_sub[tyy][key]) 
             if os.path.exists(path_ex) and not param_dic['tf_restart']['get_shaft_pred']: 
                 continue
@@ -3536,7 +3572,7 @@ class train_test_tf(get_files,get_name):
                                     )   
             rhs0=model(curv[0]).numpy()   
             key=f'{self.model_type}_{self.model_sufix}_{self.path_dir}'  
-            for kk,tyy in enumerate(self.intensity_spines_logit):
+            for kk,tyy in enumerate(self.intensity_logit_dict[pre_portion]):
                 np.savetxt(self.path_file_sub[tyy][key], rhs0[:,kk], fmt='%f') 
 
             # pid.get_shaft_pred(
@@ -3644,6 +3680,7 @@ class train_test_tf(get_files,get_name):
                             kmean_n_run=kmean_n_run,
                             kmean_max_iter=kmean_max_iter,
                             param_dic=param_dic,
+                            dend_path_true_final=self.dend_path_true_final,
                                 )
             pid.save_pinn_data()    
             pid.get_dend_data()
@@ -3885,7 +3922,7 @@ class train_test_tf(get_files,get_name):
                 iou_tmp=iou  
                 index_save.append(i)
                 np.savetxt(index_save_dir, np.array(index_save), fmt='%d')  
-            if pre_portion=='head_neck':
+            if pre_portion=='neck_head':
                 pbar.set_description(f"Loss: {loss_tmp:.6f} |  IoU sh: {min(iou_tmp[0]):.4f} IoU nk: {min(iou_tmp[1]):.4f} IoU hd: {min(iou_tmp[2]):.4f}")
             elif pre_portion=='spine':
                 pbar.set_description(f"Loss: {loss_tmp:.6f} |  IoU sh: {min(iou_tmp[0]):.4f} IoU sp: {min(iou_tmp[1]):.4f}")
@@ -4062,6 +4099,7 @@ class train_test_tf(get_files,get_name):
                             kmean_n_run=kmean_n_run,
                             kmean_max_iter=kmean_max_iter,
                             param_dic=param_dic,
+                            dend_path_true_final=self.dend_path_true_final,
                         )  
             pid.save_pinn_data() 
             pid.get_dend_data()
@@ -4307,6 +4345,7 @@ class train_test_tf(get_files,get_name):
                             kmean_n_run=kmean_n_run,
                             kmean_max_iter=kmean_max_iter,
                             param_dic=param_dic,
+                            dend_path_true_final=self.dend_path_true_final,
                         )   
             pid.save_pinn_data() 
             pid.get_dend_data()

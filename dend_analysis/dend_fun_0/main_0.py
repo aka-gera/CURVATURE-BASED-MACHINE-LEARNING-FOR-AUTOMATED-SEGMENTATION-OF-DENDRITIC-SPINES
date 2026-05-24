@@ -86,12 +86,14 @@ def get_navs_bar(path_heads_show,head_navbars=None):
 def get_dict_param(nam='meshes',
                     n_step = 20,
                     weight=3.,
+                    weight2=1,
                     size_threshold=100,
                     kmean_n_run=50,
                     path_heads_show=None,
                     path_heads=None,
                     head_navbar=None,
 				    wrap_method='alpha_wrap',
+                    pre_portion=None,
                     ):
     path_heads_show=path_heads_show if path_heads_show is not None else [ 
                 'dnn_GINN_SM00000_LOC_AUG',
@@ -169,6 +171,7 @@ def get_dict_param(nam='meshes',
         nam=nam,
         n_step = n_step,
         weight=weight,
+        weight2=weight2,
         size_threshold=size_threshold,
         path_display = path_display, 
         model_type_data=None,  
@@ -184,6 +187,7 @@ def get_dict_param(nam='meshes',
         path_dirs_weig=path_dirs_weig,
         head_navbar=head_navbar, 
 		wrap_method=wrap_method,
+        pre_portion=pre_portion,
     )
 
     
@@ -195,6 +199,7 @@ def get_dict_param(nam='meshes',
 def algorithm_param(nam='meshes',
                     n_step = 200,
                     weight=3.,
+                    weight2=1.,
                     size_threshold=100,
                     path_heads=None, 
                     dnn_modes=None,
@@ -216,6 +221,7 @@ def algorithm_param(nam='meshes',
                     path_heads_show_nami=None,
 					wrap_method='alpha_wrap',
                     # path_display_dic=None,
+                    pre_portion=None,
                     ):
     if param_dic is None: 
         param_dic={
@@ -466,6 +472,7 @@ def algorithm_param(nam='meshes',
                                     )   
     param['Spine-Shaft Segm']['param_fix']=dict(
                                         weight=weight,
+                                        weight2=weight2,
                                         # train_spines=train_spines,
                                         # model_type=model_type,
                                         # # # 
@@ -1199,10 +1206,11 @@ class algorithm:
             path_shaft_dir=None,
             model_type_data=None,
             data_dir=None,
-            head_navbar=None,
+            head_navbar=None, 
+            pre_portion=None,
 
             ): 
-        pre_portion=self.pre_portion
+        pre_portion=self.pre_portion if pre_portion is None else pre_portion
         path_list=self.path_list
         model_type_data=model_type_data if model_type_data is not None else model_type
         path_heads_show_data=[model_type_data]
@@ -1344,6 +1352,7 @@ class algorithm:
             drop_dic=None,
             n_step = None,
             weight=None,
+            weight2=None,
             dnn_modes=None,
             path_dirs=None, 
             param_dic=None,
@@ -1354,6 +1363,7 @@ class algorithm:
             path_dirs_weig=None,
             head_navbar=None,
 			wrap_method=None,
+            pre_portion=None,
             ): 
         param=self.param
         path_heads_show=path_heads_show if path_heads_show is not None else self.path_heads
@@ -1361,6 +1371,7 @@ class algorithm:
         path_dirs_show=path_dirs_show if path_dirs_show is not None else self.path_dirs
         model_type_data=model_type_data if model_type_data is not None else model_type
         head_navbar=head_navbar if head_navbar is not None else self.head_navbar
+        pre_portion=self.pre_portion if pre_portion is None else pre_portion
         self.data(   
                 exit_name=None,
                 entry_name=None, 
@@ -1381,9 +1392,9 @@ class algorithm:
                 data_dir=data_dir,
                 drop_dic=drop_dic, 
                 head_navbar=head_navbar,
+                pre_portion=pre_portion,
                 ) 
         dend_data_tmp=self.dend_data_tmp
-        pre_portion=self.pre_portion
         path_list=self.path_list
         data_mode=self.data_mode
         modes,data_mode,dmode=self.modes,self.data_mode,self.dmode
@@ -1518,13 +1529,7 @@ class algorithm:
                                         model_type=model_type,
                                     **param['Spine-Shaft Segm']['param'],
                                     # **param['model_shap']['param']
-                                    ) 
-            dom='sp_nfull' 
-            if param['spines_segss_old']['tf']:
-                dend_cla.get_spines_segss_old(  
-                                            dest_path=data_mode[mode_id][dom]['path'],
-                                            **param['spines_segss_old']['param']
-                                            )
+                                    )  
      
          
             if param['Morphologic Param']['tf']: 
@@ -1587,7 +1592,9 @@ class algorithm:
             model_type_data=None, 
             data_dir=None,
             head_navbar=None,
+            pre_portion=None,
             ): 
+        pre_portion=self.pre_portion if pre_portion is None else pre_portion
         param=self.param
         path_heads_show=path_heads_show if path_heads_show is not None else self.path_heads_true
         model_sufix_show=model_sufix_show if model_sufix_show is not None else self.dnn_modes 
@@ -1612,8 +1619,8 @@ class algorithm:
             path_shaft_dir=path_shaft_dir, 
             data_dir=data_dir,
             head_navbar=head_navbar,
+            pre_portion=pre_portion,
             )
-        pre_portion=self.pre_portion
         path_list=self.path_list
         param=self.param
         data_mode=self.data_mode
@@ -1743,7 +1750,9 @@ class algorithm:
             data_dir=None,
             drop_dic=None,
             head_navbar=None,
+            pre_portion=None,
             ): 
+        pre_portion=self.pre_portion if pre_portion is None else pre_portion
         param=self.param
         path_heads_show=path_heads_show if path_heads_show is not None else self.path_heads_true
         model_sufix_show=model_sufix_show if model_sufix_show is not None else self.dnn_modes 
@@ -1765,6 +1774,7 @@ class algorithm:
             path_shaft_dir=path_shaft_dir,  
             data_dir=data_dir,
             head_navbar=head_navbar,
+            pre_portion=pre_portion,
             ) 
         data_mode=self.data_mode
         modes,data_mode,dmode=self.modes,self.data_mode,self.dmode
