@@ -231,8 +231,12 @@ class app_param(get_files,get_app_param):
             self.Input=[]
             return'''
         spine_path = self.path_file[path_train['dest_shaft_path']]   
-        # spine_path = self.path_file[path_train['dest_spine_path']]  
-        iou_count = np.loadtxt(os.path.join(spine_path , self.txt_spine_iou), dtype=float)
+        # spine_path = self.path_file[path_train['dest_spine_path']] 
+        iou_path=os.path.join(spine_path , self.txt_spine_iou) 
+        if os.path.exists(iou_path):
+            iou_count = np.loadtxt(iou_path, dtype=float)
+        else:
+            iou_count=np.array([[-1,-1,0,0]])
         # print('iou_count',len(iou_count),id_name_end,dend_name) 
         iou_count=iou_count if iou_count.ndim==2 else np.array([[-1,-1,0,0]])
         
@@ -311,7 +315,9 @@ class app_param(get_files,get_app_param):
         self.plot_data_center_curv={} 
         self.plot_data_cylinder_heatmap={} 
         self.annot_intensity={ke:{} for ke in self.inten_file_train} 
-        self.logit_intensity={ke:{} for ke in self.intensity_spines_logit} 
+        # self.logit_intensity_head_neck={ke:{} for ke in self.intensity_head_neck_logit} 
+        # self.logit_intensity={ke:{} for ke in self.intensity_spines_logit} 
+        self.logit_intensity={ke:{} for ke in self.intensity_logit} 
         self.iou_count={}
         self.scatter_loss_dic={}
         self.scatter_iou_dic={}
@@ -989,7 +995,11 @@ class app_param(get_files,get_app_param):
             if not os.path.exists(intensity_path):
                 print('[[[[[Fail intensity_path]]]]]--------',intensity_path) 
             # intensity=np.loadtxt(intensity_path, dtype=float)
-        elif intensity_type in self.intensity_spines_logit:
+        elif intensity_type in self.intensity_logit:
+            intensity_path =self.path_file_sub[intensity_type][id_path]#self.annot_intensity[intensity_type][id_path]#
+            if not os.path.exists(intensity_path):
+                print('[[[[[Fail intensity_path]]]]]--------',intensity_path)
+        elif intensity_type in self.intensity_head_neck_logit:
             intensity_path =self.path_file_sub[intensity_type][id_path]#self.annot_intensity[intensity_type][id_path]#
             if not os.path.exists(intensity_path):
                 print('[[[[[Fail intensity_path]]]]]--------',intensity_path)
@@ -1051,14 +1061,16 @@ class app_param(get_files,get_app_param):
             if self.plot_data_cylinder_heatmap is not None: 
                 *pathc, last = path.split('_') 
                 if mode =='heatmap_cylinder':
-                    data=[self.plot_data_cylinder_heatmap[id_path].density_heatmap,self.plot_data_cylinder_heatmap[id_path].density_heatmap_points]
+                    data=[self.plot_data_cylinder_heatmap[id_path].density_heatmap,self.plot_data_cylinder_heatmap[id_path].density_heatmap_points,self.plot_data_cylinder_heatmap[id_path].density_heatmap_points_org]
                     figure=akp.Plotly_Figure(data= data, layout=self.layout) 
                     figure.update_layout(
                         xaxis=dict(showgrid=False),  
                         yaxis=dict(showgrid=False)  
                     ) 
                 elif mode =='heatmap_cylinder_surface':
-                    figure=akp.Plotly_Figure(data= self.plot_data_cylinder_heatmap[id_path].density_heatmap_surface, layout=self.layout)
+                    data=[self.plot_data_cylinder_heatmap[id_path].density_heatmap_surface]
+                    data.extend(self.plot_data_cylinder_heatmap[id_path].density_org_points)
+                    figure=akp.Plotly_Figure(data= data, layout=self.layout)
                 figure.update_layout(scene=self.scene)
         elif mode=='IOU':
             # if self.plot_data_iou  is not None: 

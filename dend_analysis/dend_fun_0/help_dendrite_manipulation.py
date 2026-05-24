@@ -457,10 +457,14 @@ class dendrite_manipulate(get_files,get_name):
                 if not pa_list:
                     continue
                 spine_path=fpath_true 
+                # print('[[[[[[[[[[[[[[[[mmnnmm]]]]]]]]]]]]]]]]',pa_list)
                 for pa in pa_list:
                     # nhn = trimesh.load_mesh(os.path.join(dend_path_entry_data,f'{dend_name }.obj'),process=False  ) 
                     nhn = trimesh.load_mesh(os.path.join(dend_path_entry_data,pa),process=False  ) 
                     vertices_index=mapp.Mapping_inverse(nhn.vertices) 
+                    # print('[[[[[[[[[[[[[[[[vertices_index]]]]]]]]]]]]]]]]',vertices_index)
+                    if len(vertices_index)==0:
+                        continue
                     ip = int(pa.split("_")[-1].split(".")[0]) 
                     intensity_org[vertices_index ]=ip              
                     intensity[vertices_index]=1
@@ -1167,6 +1171,7 @@ class dendrite_manipulate(get_files,get_name):
                         shaft_thre=None,
                         train_spines=False,
                         weight=None,
+                        weight2=None,
                         weights=None,
                         neck_lim=None,
                         n_clusters=3, 
@@ -1340,6 +1345,7 @@ class dendrite_manipulate(get_files,get_name):
                         train_spines=False,
                         weight=None,
                         weights=None,
+                        weight2=None,
                         neck_lim=None,
                         n_clusters=3, 
                         kmean_max_iter=300,
@@ -1445,13 +1451,15 @@ class dendrite_manipulate(get_files,get_name):
             rhs0=[] 
             shaft_path = self.path_file[path_train['dest_shaft_path']] 
             key=f'{self.model_type}_{self.model_sufix}_{self.path_dir}'  
-            for kk,tyy in enumerate(self.intensity_spines_logit): 
-               rhs0.append(np.loadtxt(self.path_file_sub[tyy][key], dtype=float)) 
+            spines_logit=self.intensity_logit_dict[pre_portion]        #head_neck_logit if pre_portion =='head_neck' else self.intensity_spines_logit
+            for kk,tyy in enumerate(spines_logit): 
+               rhs0.append(np.loadtxt(self.path_file_sub[tyy][key], dtype=float))  
             rhs0=np.array(rhs0).T
             pid.get_shaft_pred(
                             # dend=pid.dend,
                             rhs=rhs0,
                             weight=weight,
+                            weight2=weight2,
                             weights=weights, 
                             path_train=path_train, 
                             pre_portion=pre_portion,

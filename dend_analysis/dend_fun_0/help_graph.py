@@ -226,9 +226,11 @@ class graph_cylinder_heatmap:
         self.spine_path=spine_path
  
 
-    def coordinates(self): 
+    def coordinates(self):
         spine_path=self.spine_path   
-        count_path=os.path.join(spine_path, 'shaft_vertices_center.txt')#os.path.join(self.file_path_feat, 'shaft_vertices_center.txt')
+        # count_path=os.path.join(spine_path, 'shaft_vertices_center.txt')#os.path.join(self.file_path_feat, 'shaft_vertices_center.txt')self.txt_shaft_vcv_vertices_center
+        # count_path=os.path.join(spine_path, self.pid.txt_shaft_vertices_center)#os.path.join(self.file_path_feat, 'shaft_vertices_center.txt')
+        count_path=os.path.join(spine_path, self.pid.txt_shaft_vcv_vertices_center)#os.path.join(self.file_path_feat, 'shaft_vertices_center.txt')
         # skl_shaft_distance=np.loadtxt(os.path.join(spine_path, 'skl_shaft_distance.txt'))
         if os.path.exists(count_path): 
             shaft_vertices_center=np.loadtxt(count_path, dtype=float)
@@ -258,8 +260,8 @@ class graph_cylinder_heatmap:
             if os.path.exists(count_path) and os.path.exists(cen_path):  
                 vertices_center=np.loadtxt(cen_path  ) 
                 if len(vertices_center)>3:
-                    spine_index=np.loadtxt(count_path,dtype=int) 
-                    verttt=self.pid.dend.vertices[spine_index]  
+                    # spine_index=np.loadtxt(count_path,dtype=int) 
+                    verttt=vertices_center#self.pid.dend.vertices[spine_index]  
                     clo_min,gf= closest_distances_group(verttt,shaft_vertices_center, num_chunks=20)
                     save['close'].append( verttt[np.argmin(clo_min)])  
                     save['center'].append(shaft_vertices_center[gf[np.argmin(clo_min)][0]])
