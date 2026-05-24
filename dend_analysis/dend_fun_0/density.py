@@ -23,7 +23,7 @@ def flatten_cylinder(points, a, b, eps_angle=0.05, eps_height=0.005, n_replicate
     
  
     angles = np.arctan2(projection[:, 1], projection[:, 0])
-    # angles = np.mod(angles + np.pi, 2 * np.pi) - np.pi
+    angles = np.mod(angles + np.pi, 2 * np.pi) - np.pi
      
     hmin, hmax = np.min(height_component), np.max(height_component)
     height_range = hmax - hmin
@@ -254,6 +254,7 @@ class  get_cylinder:
 
 
 
+        filtered_heatmap_cyl = smoothed_heatmap[np.ix_(angle_mask, height_mask)] 
         z2d = (filtered_heatmap.T)**filtered_heatmap_scale
         z3d = (filtered_heatmap_cyl.T)**surfacecolor_scale
 
@@ -278,7 +279,6 @@ class  get_cylinder:
         )
   
 
-        filtered_heatmap_cyl = smoothed_heatmap[np.ix_(angle_mask, height_mask)] 
         xyz = cylinder_coordinates(
             angles=xedges[:-1][angle_mask]-np.pi/2,#xedges[:-1][angle_mask],  
             heights=yedges[:-1][height_mask],#yedges[:-1][height_mask],
