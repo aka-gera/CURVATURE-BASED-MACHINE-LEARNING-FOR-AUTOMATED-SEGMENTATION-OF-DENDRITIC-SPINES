@@ -734,12 +734,12 @@ class pinn_data(pdata):
             #                         spline_smooth=spline_smooth_shaft,
             #                         smooth_tf=smooth_tf,)  
 
-            self.shaft_index=shaft_index=np.loadtxt(os.path.join( shaft_path, self.txt_shaft_index),dtype=int)
-            self.vertices_center = np.loadtxt(vertices_center_path) 
-            self.vcv_length= np.loadtxt(vcv_length_path,ndmin=1)  
-            self.clu_pca=clust_pca(vertices_0,shaft_index,
-                            vertices_center= self.vertices_center,
-                            vcv_length=self.vcv_length)   
+        self.shaft_index=shaft_index=np.loadtxt(os.path.join( shaft_path, self.txt_shaft_index),dtype=int)
+        self.vertices_center = np.loadtxt(vertices_center_path) 
+        self.vcv_length= np.loadtxt(vcv_length_path,ndmin=1)  
+        self.clu_pca=clust_pca(vertices_0,shaft_index,
+                        vertices_center= self.vertices_center,
+                        vcv_length=self.vcv_length)   
 
         # print('shaft_path----------->>>>>>. get_central_data----------->>>>>>.DONE' ) 
   
@@ -816,6 +816,7 @@ class pinn_data(pdata):
                         path_train,
                         pre_portion=None, 
                         weight=None,
+                        weight2=None,
                         weights=None,
                         seg_dend='full',
                         zoom_thre=25,
@@ -850,6 +851,7 @@ class pinn_data(pdata):
                         tf_skl_shaft_distance=False, 
                         ):             
         from scipy.spatial import cKDTree
+        from dend_fun_0.help_funn import clust_pca
         file_path_feat = file_path_feat or self.file_path_feat
         file_path = file_path or self.file_path 
         line_num_points=line_num_points or self.line_num_points_shaft
@@ -872,7 +874,7 @@ class pinn_data(pdata):
         if len(nng) != len(rhs):
             hh,jj=len(nng),len(rhs)
             print(f'====================={hh}        {jj}') 
-        weig=np.array([weight,0.81])
+        weig=np.array([weight,0.81]) if pre_portion !='neck_head' else np.array([weight,weight2,0.81])
         rhs0=weig*rhs.copy() #rhs.copy()#
         msh_tmp=model_shaft(dend,rhs0, stop_index=1,size_threshold=size_threshold,shaft_thre=shaft_thre,uniq_rem_lim=neck_lim) 
         msh_tmp.get_spine_node() 
@@ -938,26 +940,31 @@ class pinn_data(pdata):
             np.savetxt(os.path.join(shaft_path, self.txt_intensity_spines_segment), intensity_spines_cluster, fmt='%d') 
             np.savetxt(os.path.join(shaft_path, self.txt_shaft_index), shaft_index, fmt='%d') 
             np.savetxt(os.path.join(shaft_path, self.txt_shaft_faces), shaft_faces, fmt='%d')   
+            '''
             skl_vert=skl_vertices[skl_index[shaft_index]]
-
             nng=np.loadtxt(os.path.join(self.file_path,'vertices_old.txt'),dtype=float)
             distance = cKDTree(skl_vert).query(nng)[0].flatten()
             np.savetxt(os.path.join(shaft_path, self.txt_shaft_vertices_center), skl_vert, fmt='%f')
             np.savetxt(os.path.join(shaft_path, self.txt_shaft_vcv_length), distance, fmt='%f')
+            '''
             # np.savetxt(os.path.join(shaft_vertices_center_path_dest, self.txt_shaft_vertices_center), self.vertices_center, fmt='%f')
 
-            # np.savetxt(os.path.join(shaft_vertices_center_path_dest, self.txt_shaft_vcv_length), self.vcv_length, fmt='%f') 
-            '''
+            # np.savetxt(os.path.join(shaft_vertices_center_path_dest, self.txt_shaft_vcv_length), self.vcv_length, fmt='%f')
             self.get_central_data(shaft_path=shaft_path,
                                 smooth_tf=smooth_tf,
-                                vertices_center=skl_vertices[skl_index[shaft_index]])     
+                                vertices_center=skl_vertices[skl_index[shaft_index]]) 
+            # self.vertices_center[0]=self.clu_pca.pc_start
+            # self.vertices_center[-1]=self.clu_pca.pc_end
+            
             np.savetxt(os.path.join(shaft_path, self.txt_shaft_vertices_center), self.vertices_center, fmt='%f')
             np.savetxt(os.path.join(shaft_path, self.txt_shaft_vcv_length), self.vcv_length, fmt='%f')
-            np.savetxt(os.path.join(shaft_path , self.txt_shaft_vertices_center), self.vertices_center, fmt='%f')
-            np.savetxt(os.path.join(shaft_path, self.txt_shaft_vcv_length), self.vcv_length, fmt='%f') 
+            # np.savetxt(os.path.join(shaft_path , self.txt_shaft_vertices_center), self.vertices_center, fmt='%f')
+            # np.savetxt(os.path.join(shaft_path, self.txt_shaft_vcv_length), self.vcv_length, fmt='%f') 
             # np.savetxt(os.path.join(file_path_feat , self.txt_shaft_vertices_center), self.vertices_center, fmt='%f')
             # np.savetxt(os.path.join(spine_path_new , 'shaft_vcv_length.txt'), self.vcv_length, fmt='%f')  
+ 
 
+            '''
             '''
 
 
@@ -1163,13 +1170,21 @@ class pinn_data(pdata):
 
             self.get_central_data(shaft_path=shaft_path,
                                 smooth_tf=smooth_tf,
-                                vertices_center=skeleton_p)     
+                                vertices_center=skeleton_p) 
             np.savetxt(os.path.join(dest_path, self.txt_shaft_vcv_vertices_center), self.vertices_center, fmt='%f')
             tree = KDTree( self.vertices_center)
             dist, indices= tree.query(vertices_00 )
             np.savetxt(os.path.join(dest_path, self.txt_shaft_vcv_length), dist, fmt='%f')
             mesh_sk=trimesh.Trimesh(vertices=self.vertices_center[indices.flatten()],faces=faces_00, process=False ) 
             mesh_sk.export( os.path.join(dest_path ,'vcv_shaft_vertices.obj')) 
+
+
+
+
+
+
+
+
 
             # np.savetxt(os.path.join(file_path_feat , self.txt_shaft_vertices_center), self.vertices_center, fmt='%f')
             # np.savetxt(os.path.join(spine_path_new , 'shaft_vcv_length.txt'), self.vcv_length, fmt='%f')  
