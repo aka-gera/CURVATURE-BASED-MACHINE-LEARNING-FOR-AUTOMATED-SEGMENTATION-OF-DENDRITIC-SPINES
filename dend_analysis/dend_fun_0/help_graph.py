@@ -216,8 +216,22 @@ def get_cm_iou(sze_checks_0 ,sze_check ,sze_check_un ,iou_dict={}, iou_per=70,la
         # iou_dict['union']['roc_curve']=dict(fpr=fpr,tpr=tpr,roc_auc=roc_auc)
         # iou_hist.append([hist ,hist_un ])
         return iou_dict
-
  
+
+def pca_extremities(points): 
+    centroid = np.mean(points, axis=0) 
+    xxx = points - centroid
+    cov = np.cov(xxx.T)
+    eigvals, eigvecs = np.linalg.eig(cov)
+ 
+    principal_axis = eigvecs[:, np.argmax(eigvals)]
+    ttt = np.dot(xxx, principal_axis)
+ 
+    pmin = centroid + ttt[np.argmin(ttt)] * principal_axis
+    pmax = centroid + ttt[np.argmax(ttt)] * principal_axis
+
+    return pmin, pmax
+
 
 class graph_cylinder_heatmap:
     def __init__(self,pid,spine_path,):
@@ -243,11 +257,13 @@ class graph_cylinder_heatmap:
         mmm=count.ndim
         count=count if mmm==2 else count.reshape(-1,1)    
         save={}  
+        pmin,pmax= pca_extremities(shaft_vertices_center)
         save['close']=[]  
         save['farthest']=[]
         save['center']=[] 
-        save['point_a']=shaft_vertices_center[0, :]
-        save['point_b']=shaft_vertices_center[-1, :]
+        save['point_a']=pmax #shaft_vertices_center[0, :]
+        save['point_b']=pmin#shaft_vertices_center[-1, :]
+        # print('[[[[]]]]',pmin,pmax,shaft_vertices_center[0, :])
         iii=0
         dst=-1
         sac=[]
